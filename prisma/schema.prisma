@@ -1,0 +1,130 @@
+// Schema de Prisma para la app de Cande.
+// SQLite por simplicidad; para producción se puede migrar a Postgres cambiando
+// provider y corriendo `prisma migrate deploy`.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Único usuario (Cande). Podés extenderlo a múltiples usuarios más adelante.
+model Usuario {
+  id           Int      @id @default(autoincrement())
+  email        String   @unique
+  nombre       String
+  passwordHash String
+  createdAt    DateTime @default(now())
+
+  // Datos de contacto y profesionales
+  telefono             String?
+  titulo               String?
+  matricula            String?
+  especialidad         String?
+  domicilioProfesional String?
+
+  // Datos de facturación
+  cuit             String?
+  razonSocial      String?
+  condicionAfip    String?
+  domicilioFiscal  String?
+  cbu              String?
+  aliasBank        String?
+
+  // Google Calendar OAuth
+  googleAccessToken  String?
+  googleRefreshToken String?
+  googleTokenExpiry  DateTime?
+}
+
+model Paciente {
+  id                  Int      @id @default(autoincrement())
+  // Datos básicos
+  nombre              String
+  apellido            String
+  fechaNacimiento     DateTime?
+  telefono            String?
+  email               String?
+  direccion           String?
+  // Tutor / responsable
+  tutorNombre         String?
+  tutorTelefono       String?
+  tutorDni            String?
+  tutorRelacion       String?  // padre, madre, abuelo, etc.
+  // Tipo de atención
+  tipo                String   // "particular" | "obra_social"
+  obraSocialNombre    String?
+  numeroAfiliado      String?
+  sesionesAutorizadas Int?
+  importeSesion       Float    @default(0)
+  // Clínico
+  motivoConsulta           String?
+  diagnostico              String?
+  objetivosTerapeuticos    String?
+  // Estado
+  activo              Boolean  @default(true)
+  notasGenerales      String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  turnos   Turno[]
+  sesiones Sesion[]
+  archivos Archivo[]
+
+  @@index([apellido, nombre])
+}
+
+model Turno {
+  id          Int      @id @default(autoincrement())
+  pacienteId  Int
+  paciente    Paciente @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
+  inicio      DateTime
+  fin         DateTime
+  estado      String   @default("programado")
+  modalidad   String   @default("presencial")
+  confirmado  Boolean  @default(false)
+  importe     Float?
+  cobrado     Boolean  @default(false)
+  notas       String?
+  meetLink        String?
+  googleEventId   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  sesion Sesion?
+
+  @@index([inicio])
+  @@index([pacienteId])
+}
+
+model Archivo {
+  id         Int      @id @default(autoincrement())
+  pacienteId Int
+  paciente   Paciente @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
+  nombre     String   // nombre original del archivo
+  ruta       String   // ruta relativa desde la carpeta uploads/
+  tipo       String   // MIME type
+  tamano     Int      // bytes (sin tilde por limitación de Prisma)
+  createdAt  DateTime @default(now())
+
+  @@index([pacienteId])
+}
+
+model Sesion {
+  id         Int      @id @default(autoincrement())
+  pacienteId Int
+  paciente   Paciente @relation(fields: [pacienteId], references: [id], onDelete: Cascade)
+  turnoId    Int?     @unique
+  turno      Turno?   @relation(fields: [turnoId], references: [id], onDelete: SetNull)
+  fecha      DateTime
+  resumen    String // contenido clínico de la sesión
+  objetivos  String?
+  proximosPasos String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([pacienteId, fecha])
+}

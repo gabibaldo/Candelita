@@ -1,0 +1,123 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #faf9fc;
+  --bg-subtle: #f4f1f9;
+  --ink: #2e2925;
+  --line: #e8e2f0;
+}
+
+html {
+  font-family: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  font-feature-settings: "ss01";
+}
+html, body {
+  background: var(--bg);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* FullCalendar look */
+.fc {
+  --fc-border-color: #e4ddf0;
+  --fc-today-bg-color: #F8F5FF;
+  --fc-neutral-bg-color: #faf9fc;
+  --fc-page-bg-color: transparent;
+  --fc-event-border-color: transparent;
+  font-family: inherit;
+}
+.fc .fc-toolbar-title { font-size: 1rem; font-weight: 600; color: #4D289F; }
+.fc .fc-button {
+  background: #fff !important;
+  color: #5D31BF !important;
+  border: 1px solid #DDD4FB !important;
+  box-shadow: none !important;
+  text-transform: capitalize;
+  font-weight: 500;
+  padding: .35rem .7rem !important;
+  border-radius: .6rem !important;
+  font-size: .8rem;
+}
+.fc .fc-button:hover { background: #F8F5FF !important; }
+.fc .fc-button-primary:not(:disabled).fc-button-active,
+.fc .fc-button-primary:not(:disabled):active {
+  background: #7240DC !important;
+  color: #fff !important;
+  border-color: #7240DC !important;
+}
+.fc .fc-event {
+  border-radius: 8px !important;
+  border: none !important;
+  font-size: 12px;
+  padding: 3px 6px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+}
+.fc .fc-timegrid-slot { height: 2.3rem; }
+.fc .fc-col-header-cell-cushion,
+.fc .fc-daygrid-day-number { color: #4D289F; font-weight: 500; }
+.fc .fc-timegrid-axis-cushion,
+.fc .fc-timegrid-slot-label-cushion { color: #9d9084; font-size: 11px; }
+.fc a { text-decoration: none !important; }
+.fc .fc-non-business { background: #f4f1f9 !important; opacity: 0.6; }
+
+/* Componentes */
+@layer components {
+  .input, .textarea, .select {
+    @apply w-full rounded-xl border border-ink-200 bg-white px-3 py-2 text-sm text-ink-800 placeholder:text-ink-400 shadow-sm transition focus:border-brand-400 focus:outline-none focus:ring-4 focus:ring-brand-100;
+  }
+  .textarea { @apply py-2.5 min-h-[92px] leading-relaxed; }
+  .label { @apply block text-xs font-medium text-ink-500 mb-1.5 tracking-wide; }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none;
+  }
+  .btn-primary  { @apply btn bg-brand-600 text-white hover:bg-brand-700 shadow-sm; }
+  .btn-ghost    { @apply btn border border-ink-200 bg-white text-ink-700 hover:bg-brand-50 hover:border-brand-200 hover:text-brand-700; }
+  .btn-subtle   { @apply btn bg-ink-100 text-ink-700 hover:bg-ink-200; }
+  .btn-danger   { @apply btn bg-red-600 text-white hover:bg-red-700 shadow-sm; }
+  .btn-success  { @apply btn bg-sage-600 text-white hover:bg-sage-700 shadow-sm; }
+  .btn-icon     { @apply btn p-2 border border-ink-200 bg-white text-ink-600 hover:bg-brand-50 hover:text-brand-600 hover:border-brand-200; }
+
+  .card {
+    @apply rounded-2xl bg-white border border-ink-100 shadow-soft;
+  }
+  .chip {
+    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium;
+  }
+  .section-title {
+    @apply text-xs font-semibold tracking-widest text-ink-400 uppercase;
+  }
+  .divider { @apply h-px bg-ink-100; }
+
+  /* Avatar con iniciales */
+  .avatar {
+    @apply inline-flex items-center justify-center rounded-full font-semibold text-[13px] tracking-wide select-none;
+  }
+}
+
+/* Previene zoom en iOS al enfocar inputs (font-size < 16px dispara zoom) */
+@media (max-width: 767px) {
+  .input, .textarea, .select { font-size: 16px; }
+}
+
+/* Scrollbar sutil */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: #DDD4FB; border-radius: 8px; border: 2px solid var(--bg); }
+::-webkit-scrollbar-thumb:hover { background: #C3ADF7; }
+
+/* Utilidades */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fadeUp { animation: fadeUp .2s ease-out both; }
