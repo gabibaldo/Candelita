@@ -71,6 +71,17 @@ function LoginForm({ onRecover }: { onRecover: () => void }) {
 
   return (
     <div className="w-full max-w-[360px] space-y-6 animate-fadeUp">
+      {/* Avatar */}
+      <div className="flex flex-col items-center gap-2 mb-2">
+        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-brand-500 to-brand-800 flex items-center justify-center text-white shadow-lg">
+          <HeartHandshake className="w-8 h-8" />
+        </div>
+        <div className="text-center">
+          <p className="font-semibold text-ink-800 text-sm">Lic. Candela Berardi</p>
+          <p className="text-[11px] text-ink-400">Psicóloga Infantil</p>
+        </div>
+      </div>
+
       {/* Encabezado */}
       <div className="space-y-1">
         <h2 className="text-2xl font-bold text-ink-900">Bienvenida</h2>
@@ -331,38 +342,24 @@ function LoginContent() {
   const [view, setView] = useState<"login" | "recover">("login");
 
   return (
-    <div className="min-h-screen grid md:grid-cols-2" style={{ background: "var(--bg)" }}>
+    <div className="min-h-screen grid md:grid-cols-2">
       <DecorativePanel />
 
       {/* Panel de formulario */}
-      <div className="flex flex-col min-h-screen">
-        {/* Header mobile */}
-        <div className="md:hidden flex items-center gap-3 px-6 pt-8 pb-4">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-brand-500 to-brand-800 flex items-center justify-center text-white shadow-soft">
-            <HeartHandshake className="w-4 h-4" />
-          </div>
-          <div>
-            <p className="font-semibold text-ink-800 text-[13px] leading-tight">Lic. Candela Berardi</p>
-            <p className="text-[11px] text-ink-500">Gestión de Turnos</p>
-          </div>
-        </div>
-
-        {/* Formulario centrado */}
-        <div className="flex-1 flex items-center justify-center px-6 py-10">
-          <Suspense
-            fallback={
-              <div className="text-sm text-ink-400 flex items-center gap-2">
-                <Loader2 className="w-4 h-4 animate-spin" /> Cargando…
-              </div>
-            }
-          >
-            {view === "login" ? (
-              <LoginForm onRecover={() => setView("recover")} />
-            ) : (
-              <RecoverForm onBack={() => setView("login")} />
-            )}
-          </Suspense>
-        </div>
+      <div className="min-h-screen flex items-center justify-center px-6 py-10 bg-gradient-to-b from-brand-50 to-white md:bg-none md:bg-white">
+        <Suspense
+          fallback={
+            <div className="text-sm text-ink-400 flex items-center gap-2">
+              <Loader2 className="w-4 h-4 animate-spin" /> Cargando…
+            </div>
+          }
+        >
+          {view === "login" ? (
+            <LoginForm onRecover={() => setView("recover")} />
+          ) : (
+            <RecoverForm onBack={() => setView("login")} />
+          )}
+        </Suspense>
       </div>
     </div>
   );
