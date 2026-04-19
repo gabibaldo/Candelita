@@ -46,7 +46,7 @@ export default function QuickNote({ pacientes }: { pacientes: Paciente[] }) {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-2 z-50 bg-white border border-ink-200 rounded-xl shadow-lg w-80 p-4 space-y-3">
+        <div className="absolute right-0 top-full mt-2 z-50 bg-white border border-ink-200 rounded-xl shadow-lg w-80 max-w-[calc(100vw-2rem)] p-4 space-y-3">
           <div className="flex items-center justify-between">
             <p className="text-sm font-semibold text-ink-800">Nota rápida</p>
             <button onClick={() => setOpen(false)} className="btn-icon !p-1 text-ink-400">

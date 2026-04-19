@@ -54,7 +54,7 @@ type TurnoView = {
 function colorForPaciente(t: TurnoView) {
   if (t.estado === "cancelado" || t.estado === "ausente")
     return { bg: "#f3f4f6", text: "#6b7280" };
-  if (t.paciente.tipo === "obra_social")
+  if (t.modalidad === "virtual")
     return { bg: "#dbeafe", text: "#1e3a8a" };
   return { bg: "#d1fae5", text: "#065f46" };
 }
@@ -257,11 +257,15 @@ export default function Calendar({
         <div className="ml-auto flex items-center gap-3 text-xs text-ink-500">
           <span className="inline-flex items-center gap-1">
             <span className="w-3 h-3 rounded bg-emerald-200 inline-block" />
-            Particular
+            Presencial
           </span>
           <span className="inline-flex items-center gap-1">
             <span className="w-3 h-3 rounded bg-blue-200 inline-block" />
-            Obra social
+            Virtual
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <span className="w-3 h-3 rounded bg-gray-200 inline-block" />
+            Cancelado / Ausente
           </span>
         </div>
       </div>
