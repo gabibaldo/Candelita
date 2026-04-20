@@ -143,6 +143,10 @@ export default async function EstadisticasPage() {
 
   // ── Mejor mes ─────────────────────────────────────────────────────────────
   const maxIngresos = Math.max(...mesesArr.map((m) => m.ingresos), 1);
+  const mejorMes = mesesArr.reduce(
+    (best, m) => (m.ingresos > (best?.ingresos ?? -1) ? m : best),
+    null as MesData | null
+  );
 
   return (
     <div className="space-y-8">
@@ -189,6 +193,22 @@ export default async function EstadisticasPage() {
           }
         />
       </section>
+
+      {/* Mejor mes */}
+      {mejorMes && mejorMes.ingresos > 0 && (
+        <section className="card p-4 flex items-center gap-4 bg-gradient-to-r from-brand-50 to-white border-brand-100">
+          <div className="w-10 h-10 rounded-xl bg-brand-100 text-brand-700 flex items-center justify-center shrink-0">
+            <TrendingUp className="w-5 h-5" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-xs uppercase tracking-wider text-brand-500 font-medium">Mejor mes</p>
+            <p className="text-base font-semibold text-ink-800 capitalize">{mejorMes.label}</p>
+            <p className="text-xs text-ink-500">
+              {formatMoney(mejorMes.ingresos)} cobrados · {mejorMes.realizados} sesiones
+            </p>
+          </div>
+        </section>
+      )}
 
       {/* Modalidad */}
       <section className="grid grid-cols-2 gap-3">
@@ -263,68 +283,71 @@ export default async function EstadisticasPage() {
         </div>
       </section>
 
-      {/* Barra de ingresos */}
-      <section className="space-y-3">
-        <h2 className="section-title">Ingresos cobrados por mes</h2>
-        <div className="card p-5 space-y-3">
-          {mesesArr.map((mes) => {
-            const pct = maxIngresos > 0 ? (mes.ingresos / maxIngresos) * 100 : 0;
-            return (
-              <div key={mes.label} className="flex items-center gap-3">
-                <p className="text-xs text-ink-500 capitalize w-36 shrink-0 truncate">{mes.label}</p>
-                <div className="flex-1 h-6 bg-ink-100 rounded-full overflow-hidden relative">
-                  <div
-                    className="h-full bg-gradient-to-r from-brand-400 to-brand-600 rounded-full transition-all duration-500"
-                    style={{ width: `${pct}%` }}
-                  />
-                </div>
-                <p className="text-xs font-semibold text-ink-700 tabular-nums w-28 text-right shrink-0">
-                  {mes.ingresos > 0 ? formatMoney(mes.ingresos) : <span className="text-ink-300">—</span>}
-                </p>
-              </div>
-            );
-          })}
-        </div>
-      </section>
-
-      {/* Asistencia */}
-      <section className="space-y-3">
-        <h2 className="section-title">Asistencia por mes</h2>
-        <div className="card p-5 space-y-3">
-          {mesesArr.map((mes) => {
-            const total = mes.realizados + mes.ausentes;
-            const pct = total > 0 ? Math.round((mes.realizados / total) * 100) : null;
-            return (
-              <div key={mes.label} className="flex items-center gap-3">
-                <p className="text-xs text-ink-500 capitalize w-36 shrink-0 truncate">{mes.label}</p>
-                <div className="flex-1 h-6 bg-ink-100 rounded-full overflow-hidden relative">
-                  {pct != null && (
+      {/* Gráficos lado a lado en desktop */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Barra de ingresos */}
+        <section className="space-y-3">
+          <h2 className="section-title">Ingresos cobrados por mes</h2>
+          <div className="card p-5 space-y-3">
+            {mesesArr.map((mes) => {
+              const pct = maxIngresos > 0 ? (mes.ingresos / maxIngresos) * 100 : 0;
+              return (
+                <div key={mes.label} className="flex items-center gap-3">
+                  <p className="text-xs text-ink-500 capitalize w-28 shrink-0 truncate">{mes.label}</p>
+                  <div className="flex-1 h-6 bg-ink-100 rounded-full overflow-hidden relative">
                     <div
-                      className={
-                        "h-full rounded-full transition-all duration-500 " +
-                        (pct >= 80
-                          ? "bg-gradient-to-r from-sage-400 to-sage-600"
-                          : "bg-gradient-to-r from-amber-300 to-amber-500")
-                      }
+                      className="h-full bg-gradient-to-r from-brand-400 to-brand-600 rounded-full transition-all duration-500"
                       style={{ width: `${pct}%` }}
                     />
-                  )}
+                  </div>
+                  <p className="text-xs font-semibold text-ink-700 tabular-nums w-24 text-right shrink-0">
+                    {mes.ingresos > 0 ? formatMoney(mes.ingresos) : <span className="text-ink-300">—</span>}
+                  </p>
                 </div>
-                <div className="w-28 text-right shrink-0 flex items-center justify-end gap-1.5">
-                  {pct != null ? (
-                    <>
-                      <UserCheck className="w-3 h-3 text-sage-600" />
-                      <span className="text-xs font-semibold text-ink-700 tabular-nums">{pct}%</span>
-                    </>
-                  ) : (
-                    <span className="text-xs text-ink-300">—</span>
-                  )}
+              );
+            })}
+          </div>
+        </section>
+
+        {/* Asistencia */}
+        <section className="space-y-3">
+          <h2 className="section-title">Asistencia por mes</h2>
+          <div className="card p-5 space-y-3">
+            {mesesArr.map((mes) => {
+              const total = mes.realizados + mes.ausentes;
+              const pct = total > 0 ? Math.round((mes.realizados / total) * 100) : null;
+              return (
+                <div key={mes.label} className="flex items-center gap-3">
+                  <p className="text-xs text-ink-500 capitalize w-28 shrink-0 truncate">{mes.label}</p>
+                  <div className="flex-1 h-6 bg-ink-100 rounded-full overflow-hidden relative">
+                    {pct != null && (
+                      <div
+                        className={
+                          "h-full rounded-full transition-all duration-500 " +
+                          (pct >= 80
+                            ? "bg-gradient-to-r from-sage-400 to-sage-600"
+                            : "bg-gradient-to-r from-amber-300 to-amber-500")
+                        }
+                        style={{ width: `${pct}%` }}
+                      />
+                    )}
+                  </div>
+                  <div className="w-20 text-right shrink-0 flex items-center justify-end gap-1.5">
+                    {pct != null ? (
+                      <>
+                        <UserCheck className="w-3 h-3 text-sage-600" />
+                        <span className="text-xs font-semibold text-ink-700 tabular-nums">{pct}%</span>
+                      </>
+                    ) : (
+                      <span className="text-xs text-ink-300">—</span>
+                    )}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
-      </section>
+              );
+            })}
+          </div>
+        </section>
+      </div>
     </div>
   );
 }

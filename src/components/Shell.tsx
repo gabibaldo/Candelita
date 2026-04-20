@@ -12,6 +12,7 @@ import {
   BarChart3,
 } from "lucide-react";
 import { useToast } from "./Toast";
+import SidebarWidget from "./SidebarWidget";
 
 const links = [
   { href: "/", label: "Hoy", icon: LayoutDashboard },
@@ -93,6 +94,9 @@ export default function Shell({
             );
           })}
         </nav>
+
+        {/* Widget hoy */}
+        <SidebarWidget />
 
         {/* User footer */}
         <div className="pt-3 border-t border-ink-100">

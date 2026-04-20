@@ -41,9 +41,8 @@ Solución: agregar `max-h-[90dvh] overflow-y-auto` al contenedor del formulario 
 Los botones "confirmar" y "cobrar" en la agenda semanal tienen padding mínimo y font de 10px.
 En mobile el área tocable debería ser mínimo 44×44px para evitar errores de toque.
 
-### M-4. Vista de calendario sin indicación de scroll horizontal
-En mobile, la vista semanal del calendario (FullCalendar) tiene scroll horizontal pero no hay pista visual de eso.
-Solución: agregar un fade-out en el borde derecho o un ícono de swipe la primera vez.
+### ~~M-4. Vista de calendario sin indicación de scroll horizontal~~
+~~Eliminado — la vista semanal en mobile fue quitada.~~
 
 ---
 

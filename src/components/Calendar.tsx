@@ -328,6 +328,11 @@ export default function Calendar({
           eventClick={handleEventClick}
           eventDrop={handleDrop}
           eventResize={handleDrop}
+          dayMaxEvents={2}
+          moreLinkClick={(info) => {
+            calRef.current?.getApi().changeView("timeGridDay", info.date);
+            return "stop";
+          }}
           dateClick={(info) => {
             if (calRef.current?.getApi().view.type === "dayGridMonth") {
               calRef.current.getApi().changeView("timeGridDay", info.date);
