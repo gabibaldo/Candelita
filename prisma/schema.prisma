@@ -38,6 +38,10 @@ model Usuario {
   googleAccessToken  String?
   googleRefreshToken String?
   googleTokenExpiry  DateTime?
+
+  // Recuperación de contraseña
+  resetToken       String?   // token temporal (hasheado con bcrypt)
+  resetTokenExpiry DateTime? // expira en 1 hora
 }
 
 model Paciente {

@@ -192,14 +192,20 @@ function RecoverForm({ onBack }: { onBack: () => void }) {
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  function onSubmit(e: React.FormEvent) {
+  async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    // Simulamos el envío (sin backend por ahora)
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      await fetch("/api/auth/reset-request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      // Siempre mostrar éxito (no revelar si el email existe)
       setSent(true);
-    }, 1200);
+    } finally {
+      setLoading(false);
+    }
   }
 
   if (sent) {
