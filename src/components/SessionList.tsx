@@ -1,6 +1,5 @@
 "use client";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Pencil, Trash2, Check, X, FileText } from "lucide-react";
 import { useToast } from "@/components/Toast";
 import { formatDateTime } from "@/lib/utils";
@@ -8,6 +7,7 @@ import { formatDateTime } from "@/lib/utils";
 type Sesion = {
   id: number;
   fecha: string;
+  tipo: string;
   resumen: string;
   objetivos: string | null;
   proximosPasos: string | null;
@@ -164,6 +164,9 @@ function SesionCard({ sesion, onUpdated, onDeleted }: {
         />
       ) : (
         <div className="mt-2 space-y-2">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-ink-400 mb-1">
+            {sesion.tipo === "nota" ? "Nota" : "Resumen"}
+          </p>
           <p className="text-sm whitespace-pre-wrap text-ink-800">{sesion.resumen}</p>
           {sesion.objetivos && (
             <p className="text-sm">
@@ -183,17 +186,15 @@ function SesionCard({ sesion, onUpdated, onDeleted }: {
   );
 }
 
-export default function SessionList({ initialSesiones }: { initialSesiones: Sesion[] }) {
-  const [sesiones, setSesiones] = useState<Sesion[]>(initialSesiones);
-
-  function handleUpdated(updated: Sesion) {
-    setSesiones((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
-  }
-
-  function handleDeleted(id: number) {
-    setSesiones((prev) => prev.filter((s) => s.id !== id));
-  }
-
+export default function SessionList({
+  sesiones,
+  onUpdated,
+  onDeleted,
+}: {
+  sesiones: Sesion[];
+  onUpdated: (s: Sesion) => void;
+  onDeleted: (id: number) => void;
+}) {
   if (sesiones.length === 0) {
     return (
       <div className="card p-6 text-sm text-ink-500 text-center flex flex-col items-center gap-2">
@@ -218,8 +219,8 @@ export default function SessionList({ initialSesiones }: { initialSesiones: Sesi
           <div className="flex-1 pb-4">
             <SesionCard
               sesion={s}
-              onUpdated={handleUpdated}
-              onDeleted={handleDeleted}
+              onUpdated={onUpdated}
+              onDeleted={onDeleted}
             />
           </div>
         </li>

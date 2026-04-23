@@ -8,6 +8,7 @@ export type PatientFormData = {
   apellido: string;
   fechaNacimiento?: string | null;
   telefono?: string | null;
+  celular?: string | null;
   email?: string | null;
   direccion?: string | null;
   tutorNombre?: string | null;
@@ -25,6 +26,75 @@ export type PatientFormData = {
   notasGenerales?: string | null;
   activo?: boolean;
 };
+
+// ── Formatters ──────────────────────────────────────────────
+// DNI argentino: X.XXX.XXX o XX.XXX.XXX (7-8 dígitos con puntos)
+function formatDNI(raw: string): string {
+  const digits = raw.replace(/\D/g, "").slice(0, 8);
+  if (digits.length <= 3) return digits;
+  // Insertar puntos de derecha a izquierda en grupos de 3
+  const reversed = digits.split("").reverse().join("");
+  const grouped = reversed.match(/.{1,3}/g)!.join(".");
+  return grouped.split("").reverse().join("");
+}
+
+// Teléfono: XX XXXX-XXXX (10 dígitos → área 2 + número 8) o adaptable
+function formatPhone(raw: string): string {
+  const digits = raw.replace(/\D/g, "").slice(0, 10);
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 6) return digits.slice(0, 2) + " " + digits.slice(2);
+  return digits.slice(0, 2) + " " + digits.slice(2, 6) + "-" + digits.slice(6);
+}
+
+// Celular: igual que teléfono (mismo formato local)
+const formatCelular = formatPhone;
+
+// ── Componentes de input con formato ─────────────────────────
+function DNIInput({
+  value,
+  onChange,
+  placeholder = "12.345.678",
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+}) {
+  return (
+    <input
+      className="input"
+      value={value}
+      placeholder={placeholder}
+      inputMode="numeric"
+      onChange={(e) => onChange(formatDNI(e.target.value))}
+    />
+  );
+}
+
+function PhoneInput({
+  value,
+  onChange,
+  placeholder = "11 1234-5678",
+  isCelular = false,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  isCelular?: boolean;
+}) {
+  const fmt = isCelular ? formatCelular : formatPhone;
+  return (
+    <input
+      className="input"
+      value={value}
+      placeholder={placeholder}
+      inputMode="tel"
+      type="tel"
+      onChange={(e) => onChange(fmt(e.target.value))}
+    />
+  );
+}
+
+// ────────────────────────────────────────────────────────────
 
 export default function PatientForm({ initial }: { initial?: PatientFormData }) {
   const router = useRouter();
@@ -115,10 +185,18 @@ export default function PatientForm({ initial }: { initial?: PatientFormData }) 
           </div>
           <div>
             <label className="label">Teléfono</label>
-            <input
-              className="input"
+            <PhoneInput
               value={data.telefono ?? ""}
-              onChange={(e) => set("telefono", e.target.value)}
+              onChange={(v) => set("telefono", v || null)}
+            />
+          </div>
+          <div>
+            <label className="label">Celular</label>
+            <PhoneInput
+              value={data.celular ?? ""}
+              onChange={(v) => set("celular", v || null)}
+              placeholder="11 5678-9012"
+              isCelular
             />
           </div>
           <div>
@@ -130,7 +208,7 @@ export default function PatientForm({ initial }: { initial?: PatientFormData }) 
               onChange={(e) => set("email", e.target.value)}
             />
           </div>
-          <div>
+          <div className="md:col-span-2">
             <label className="label">Dirección</label>
             <input
               className="input"
@@ -165,18 +243,16 @@ export default function PatientForm({ initial }: { initial?: PatientFormData }) 
           </div>
           <div>
             <label className="label">Teléfono del tutor</label>
-            <input
-              className="input"
+            <PhoneInput
               value={data.tutorTelefono ?? ""}
-              onChange={(e) => set("tutorTelefono", e.target.value)}
+              onChange={(v) => set("tutorTelefono", v || null)}
             />
           </div>
           <div>
             <label className="label">DNI del tutor</label>
-            <input
-              className="input"
+            <DNIInput
               value={data.tutorDni ?? ""}
-              onChange={(e) => set("tutorDni", e.target.value)}
+              onChange={(v) => set("tutorDni", v || null)}
             />
           </div>
         </div>

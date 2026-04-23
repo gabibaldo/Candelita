@@ -51,6 +51,7 @@ model Paciente {
   apellido            String
   fechaNacimiento     DateTime?
   telefono            String?
+  celular             String?
   email               String?
   direccion           String?
   // Tutor / responsable
@@ -124,6 +125,7 @@ model Sesion {
   turnoId    Int?     @unique
   turno      Turno?   @relation(fields: [turnoId], references: [id], onDelete: SetNull)
   fecha      DateTime
+  tipo       String  @default("sesion") // "sesion" | "nota"
   resumen    String // contenido clínico de la sesión
   objetivos  String?
   proximosPasos String?

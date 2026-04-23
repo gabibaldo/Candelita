@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
-import { createMeetEvent } from "@/lib/google";
+import { createCalendarEvent } from "@/lib/google";
 import { z } from "zod";
 
 export const runtime = "nodejs";
@@ -55,7 +55,9 @@ export async function GET(req: NextRequest) {
           obraSocialNombre: true,
           tutorNombre: true,
           tutorTelefono: true,
+          tutorRelacion: true,
           telefono: true,
+          diagnostico: true,
         },
       },
       sesion: { select: { id: true } },
@@ -109,32 +111,35 @@ export async function POST(req: NextRequest) {
       include: { paciente: true },
     });
 
-    if (d.modalidad === "virtual") {
-      const session = await getSession();
-      if (session) {
-        const usuario = await (prisma.usuario as any).findFirst({
-          select: { googleAccessToken: true, googleRefreshToken: true, googleTokenExpiry: true },
-        });
-        if (usuario?.googleAccessToken && usuario?.googleRefreshToken) {
-          try {
-            const { googleEventId, meetLink } = await createMeetEvent(
-              usuario.googleAccessToken,
-              usuario.googleRefreshToken,
-              usuario.googleTokenExpiry,
-              {
-                summary: `Sesión — ${(turno.paciente as any).nombre} ${(turno.paciente as any).apellido}`,
-                start: turno.inicio,
-                end: turno.fin,
-              }
-            );
-            await prisma.turno.update({
-              where: { id: turno.id },
-              data: { googleEventId, meetLink },
-            });
-            return NextResponse.json({ ...turno, googleEventId, meetLink }, { status: 201 });
-          } catch {
-            // Si falla Google Calendar, el turno se guarda igual
-          }
+    // Crear evento en Google Calendar para presencial y virtual
+    const session = await getSession();
+    if (session) {
+      const usuario = await (prisma.usuario as any).findFirst({
+        select: { googleAccessToken: true, googleRefreshToken: true, googleTokenExpiry: true },
+      });
+      if (usuario?.googleAccessToken && usuario?.googleRefreshToken) {
+        try {
+          const modalidad = (d.modalidad ?? "presencial") as "presencial" | "virtual";
+          const paciente = turno.paciente as any;
+          const emoji = modalidad === "virtual" ? "🖥" : "🏥";
+          const { googleEventId, meetLink } = await createCalendarEvent(
+            usuario.googleAccessToken,
+            usuario.googleRefreshToken,
+            usuario.googleTokenExpiry,
+            {
+              summary: `${emoji} ${paciente.apellido}, ${paciente.nombre}`,
+              start: turno.inicio,
+              end: turno.fin,
+              modalidad,
+            }
+          );
+          await prisma.turno.update({
+            where: { id: turno.id },
+            data: { googleEventId, meetLink },
+          });
+          return NextResponse.json({ ...turno, googleEventId, meetLink }, { status: 201 });
+        } catch {
+          // Si falla Google Calendar, el turno se guarda igual
         }
       }
     }

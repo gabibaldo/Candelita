@@ -8,6 +8,7 @@ const SesionSchema = z.object({
   pacienteId: z.number().int().positive(),
   turnoId: z.number().int().positive().optional().nullable(),
   fecha: z.string(),
+  tipo: z.enum(["sesion", "nota"]).optional().default("sesion"),
   resumen: z.string().min(1),
   objetivos: z.string().optional().nullable(),
   proximosPasos: z.string().optional().nullable(),
@@ -38,19 +39,12 @@ export async function POST(req: NextRequest) {
       pacienteId: d.pacienteId,
       turnoId: d.turnoId ?? null,
       fecha: new Date(d.fecha),
+      tipo: d.tipo ?? "sesion",
       resumen: d.resumen,
       objetivos: d.objetivos ?? null,
       proximosPasos: d.proximosPasos ?? null,
     },
   });
-
-  // Si la sesión se vincula a un turno, marcar el turno como realizado.
-  if (d.turnoId) {
-    await prisma.turno.update({
-      where: { id: d.turnoId },
-      data: { estado: "realizado" },
-    });
-  }
 
   return NextResponse.json(sesion, { status: 201 });
 }

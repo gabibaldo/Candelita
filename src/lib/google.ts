@@ -17,7 +17,13 @@ export function getAuthUrl() {
   });
 }
 
-export async function createMeetEvent(
+// Colores de Google Calendar:
+//   "2" = Sage (verde)    → turnos presenciales
+//   "3" = Grape (violeta) → turnos virtuales
+const COLOR_PRESENCIAL = "2";
+const COLOR_VIRTUAL    = "3";
+
+export async function createCalendarEvent(
   accessToken: string,
   refreshToken: string,
   tokenExpiry: Date | null,
@@ -26,8 +32,15 @@ export async function createMeetEvent(
     start,
     end,
     description,
-  }: { summary: string; start: Date; end: Date; description?: string }
-) {
+    modalidad,
+  }: {
+    summary: string;
+    start: Date;
+    end: Date;
+    description?: string;
+    modalidad: "presencial" | "virtual";
+  }
+): Promise<{ googleEventId: string | null; meetLink: string | null }> {
   const auth = getOAuthClient();
   auth.setCredentials({
     access_token: accessToken,
@@ -36,28 +49,32 @@ export async function createMeetEvent(
   });
 
   const calendar = google.calendar({ version: "v3", auth });
+  const isVirtual = modalidad === "virtual";
 
   const res = await calendar.events.insert({
     calendarId: "primary",
-    conferenceDataVersion: 1,
+    conferenceDataVersion: isVirtual ? 1 : 0,
     requestBody: {
       summary,
       description,
+      colorId: isVirtual ? COLOR_VIRTUAL : COLOR_PRESENCIAL,
       start: { dateTime: start.toISOString(), timeZone: "America/Argentina/Buenos_Aires" },
-      end: { dateTime: end.toISOString(), timeZone: "America/Argentina/Buenos_Aires" },
-      conferenceData: {
-        createRequest: {
-          requestId: `candelita-${Date.now()}`,
-          conferenceSolutionKey: { type: "hangoutsMeet" },
+      end:   { dateTime: end.toISOString(),   timeZone: "America/Argentina/Buenos_Aires" },
+      ...(isVirtual && {
+        conferenceData: {
+          createRequest: {
+            requestId: `candelita-${Date.now()}`,
+            conferenceSolutionKey: { type: "hangoutsMeet" },
+          },
         },
-      },
+      }),
     },
   });
 
   const event = res.data;
-  const meetLink = event.conferenceData?.entryPoints?.find(
-    (e) => e.entryPointType === "video"
-  )?.uri ?? null;
+  const meetLink = isVirtual
+    ? (event.conferenceData?.entryPoints?.find((e) => e.entryPointType === "video")?.uri ?? null)
+    : null;
 
   return { googleEventId: event.id ?? null, meetLink };
 }

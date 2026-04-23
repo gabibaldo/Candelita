@@ -1,35 +1,138 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { ChevronDown, Check } from "lucide-react";
 
-type TurnoOpt = { id: number; inicio: string; estado: string };
+type TurnoOpt = { id: number; inicio: string };
+
+function formatTurno(inicio: string) {
+  return new Date(inicio).toLocaleString("es-AR", {
+    weekday: "short",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "America/Argentina/Buenos_Aires",
+  });
+}
+
+function TurnoSelect({
+  turnos,
+  value,
+  onChange,
+}: {
+  turnos: TurnoOpt[];
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  // Cerrar al hacer click fuera
+  useEffect(() => {
+    function handler(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const sorted = [...turnos].sort(
+    (a, b) => new Date(a.inicio).getTime() - new Date(b.inicio).getTime()
+  );
+  const selected = sorted.find((t) => String(t.id) === value);
+  const label = selected ? formatTurno(selected.inicio) : "— Sin vincular —";
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="input flex items-center justify-between gap-2 text-left cursor-pointer"
+      >
+        <span className={selected ? "text-ink-800" : "text-ink-400"}>{label}</span>
+        <ChevronDown className={`w-4 h-4 text-ink-400 shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+
+      {open && (
+        <div className="absolute z-50 mt-1 w-full bg-white border border-ink-200 rounded-xl shadow-lg overflow-hidden">
+          <ul className="max-h-52 overflow-y-auto divide-y divide-ink-100">
+            <li>
+              <button
+                type="button"
+                onClick={() => { onChange(""); setOpen(false); }}
+                className={`w-full text-left px-4 py-2.5 text-sm hover:bg-ink-50 flex items-center gap-2 ${!value ? "text-ink-700 font-medium" : "text-ink-400"}`}
+              >
+                {!value && <Check className="w-3.5 h-3.5 text-brand-600" />}
+                <span className={!value ? "ml-0" : "ml-5"}>— Sin vincular —</span>
+              </button>
+            </li>
+            {sorted.map((t) => {
+              const isSelected = String(t.id) === value;
+              return (
+                <li key={t.id}>
+                  <button
+                    type="button"
+                    onClick={() => { onChange(String(t.id)); setOpen(false); }}
+                    className={`w-full text-left px-4 py-2.5 text-sm hover:bg-brand-50 flex items-center gap-2 ${isSelected ? "text-brand-700 font-medium bg-brand-50" : "text-ink-700"}`}
+                  >
+                    {isSelected
+                      ? <Check className="w-3.5 h-3.5 text-brand-600 shrink-0" />
+                      : <span className="w-3.5 h-3.5 shrink-0" />}
+                    {formatTurno(t.inicio)}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
+type NuevaSesion = {
+  id: number;
+  fecha: string;
+  resumen: string;
+  objetivos: string | null;
+  proximosPasos: string | null;
+};
 
 export default function SessionForm({
   pacienteId,
   turnos,
+  initialFecha,
+  initialTurnoId,
+  onSaved,
 }: {
   pacienteId: number;
   turnos: TurnoOpt[];
+  initialFecha?: string;
+  initialTurnoId?: string;
+  onSaved?: (sesion: NuevaSesion) => void;
 }) {
-  const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
 
-  // Scroll automático cuando se navega con el hash #nueva-sesion
+  // Scroll automático: cuando viene de un turno (initialFecha) o del hash #nueva-sesion
   useEffect(() => {
-    if (typeof window !== "undefined" && window.location.hash === "#nueva-sesion") {
+    const shouldScroll =
+      initialFecha ||
+      (typeof window !== "undefined" && window.location.hash === "#nueva-sesion");
+    if (shouldScroll) {
       setTimeout(() => {
         formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       }, 100);
     }
-  }, []);
+  }, [initialFecha]);
 
   const [fecha, setFecha] = useState(() =>
-    new Date().toISOString().slice(0, 16)
+    initialFecha ?? new Date().toLocaleString("sv", { timeZone: "America/Argentina/Buenos_Aires" }).replace(" ", "T").slice(0, 16)
   );
   const [resumen, setResumen] = useState("");
   const [objetivos, setObjetivos] = useState("");
   const [proximosPasos, setProximosPasos] = useState("");
-  const [turnoId, setTurnoId] = useState<string>("");
+  const [turnoId, setTurnoId] = useState<string>(initialTurnoId ?? "");
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
@@ -60,11 +163,12 @@ export default function SessionForm({
           typeof d.error === "string" ? d.error : "No pude guardar la sesión"
         );
       }
+      const nueva: NuevaSesion = await res.json();
       setResumen("");
       setObjetivos("");
       setProximosPasos("");
       setTurnoId("");
-      router.refresh();
+      onSaved?.(nueva);
     } catch (e: any) {
       setErr(e.message);
     } finally {
@@ -93,25 +197,7 @@ export default function SessionForm({
         </div>
         <div>
           <label className="label">Vincular a turno (opcional)</label>
-          <select
-            className="input"
-            value={turnoId}
-            onChange={(e) => setTurnoId(e.target.value)}
-          >
-            <option value="">— Sin vincular —</option>
-            {turnos.map((t) => (
-              <option key={t.id} value={t.id}>
-                {new Date(t.inicio).toLocaleString("es-AR", {
-                  day: "2-digit",
-                  month: "2-digit",
-                  year: "numeric",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}{" "}
-                · {t.estado}
-              </option>
-            ))}
-          </select>
+          <TurnoSelect turnos={turnos} value={turnoId} onChange={setTurnoId} />
         </div>
       </div>
       <div>

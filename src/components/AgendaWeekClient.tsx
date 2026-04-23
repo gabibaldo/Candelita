@@ -9,7 +9,6 @@ import {
   X,
   CalendarClock,
   Bell,
-  AlertTriangle,
   BellOff,
   Video,
 } from "lucide-react";
@@ -35,7 +34,9 @@ export type TurnoAgenda = {
     obraSocialNombre: string | null;
     tutorNombre: string | null;
     tutorTelefono: string | null;
+    tutorRelacion: string | null;
     fechaNacimiento: string | null;
+    diagnostico: string | null;
   };
   sesion: { id: number } | null;
 };
@@ -231,7 +232,7 @@ export default function AgendaWeekClient({
               <div key={dateKey}>
                 <h3
                   className={
-                    "text-xs font-semibold uppercase tracking-wider mb-2" +
+                    "text-xs font-semibold uppercase tracking-wider mb-3 mt-1 " +
                     (isToday ? "text-brand-700" : "text-ink-400")
                   }
                 >
@@ -249,150 +250,108 @@ export default function AgendaWeekClient({
                       <li key={t.id}>
                         <div
                           className={
-                            "card p-3 flex items-center gap-3 hover:shadow-pop transition " +
+                            "card p-3 hover:shadow-pop transition space-y-2.5 " +
                             (isNow ? "ring-2 ring-brand-400" : "")
                           }
                         >
-                          {/* Hora — clickeable para abrir detalle */}
-                          <button
-                            onClick={() => setSelected(t)}
-                            className="w-12 shrink-0 text-center group"
-                          >
-                            <p
-                              className={
+                          {/* Fila 1: hora + avatar + nombre */}
+                          <div className="flex items-center gap-3">
+                            <button
+                              onClick={() => setSelected(t)}
+                              className="w-12 shrink-0 text-center group"
+                            >
+                              <p className={
                                 "text-base font-semibold tabular-nums group-hover:text-brand-700 transition " +
                                 (isNow ? "text-brand-700" : "text-ink-700")
-                              }
-                            >
-                              {new Date(t.inicio).toLocaleTimeString("es-AR", {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                                timeZone: "America/Argentina/Buenos_Aires",
-                              })}
-                            </p>
-                            <p className="text-[10px] text-ink-400">
-                              {Math.round(
-                                (new Date(t.fin).getTime() -
-                                  new Date(t.inicio).getTime()) /
-                                  60000
-                              )}{" "}
-                              min
-                            </p>
-                          </button>
+                              }>
+                                {new Date(t.inicio).toLocaleTimeString("es-AR", {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                  timeZone: "America/Argentina/Buenos_Aires",
+                                })}
+                              </p>
+                              <p className="text-[10px] text-ink-400">
+                                {Math.round((new Date(t.fin).getTime() - new Date(t.inicio).getTime()) / 60000)} min
+                              </p>
+                            </button>
 
-                          <Avatar
-                            nombre={t.paciente.nombre}
-                            apellido={t.paciente.apellido}
-                            size="sm"
-                          />
+                            <Avatar nombre={t.paciente.nombre} apellido={t.paciente.apellido} size="sm" />
 
-                          {/* Info paciente — clickeable para abrir detalle */}
-                          <button
-                            onClick={() => setSelected(t)}
-                            className="min-w-0 flex-1 text-left"
-                          >
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <span className="font-medium text-sm text-ink-800 hover:text-brand-700 transition">
+                            <button onClick={() => setSelected(t)} className="min-w-0 flex-1 text-left">
+                              <p className="font-medium text-sm text-ink-800 truncate hover:text-brand-700 transition">
                                 {t.paciente.apellido}, {t.paciente.nombre}
-                              </span>
-                              {edad != null && (
-                                <span className="text-xs text-ink-400">
-                                  {edad} a
-                                </span>
+                                {edad != null && <span className="text-xs text-ink-400 font-normal ml-1.5">{edad}a</span>}
+                              </p>
+                              {t.paciente.diagnostico && (
+                                <p className="text-xs text-ink-500 truncate mt-0.5 italic">
+                                  {t.paciente.diagnostico}
+                                </p>
                               )}
-                              <TipoChip
-                                tipo={t.paciente.tipo}
-                                obraSocial={t.paciente.obraSocialNombre}
-                              />
+                            </button>
+                          </div>
+
+                          {/* Fila 2: chips + acciones — apilados en mobile, lado a lado en desktop */}
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                            {/* Chips */}
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <TipoChip tipo={t.paciente.tipo} obraSocial={t.paciente.obraSocialNombre} />
                               {t.modalidad === "virtual" && (
-                                <span className="chip bg-violet-100 text-violet-700">
-                                  🖥 virtual
-                                </span>
-                              )}
-                              {t.confirmado && (
-                                <span className="chip bg-brand-100 text-brand-700">
-                                  <Bell className="w-3 h-3" /> confirmado
-                                </span>
-                              )}
-                              {t.sesion && (
-                                <span className="chip bg-sage-100 text-sage-700">
-                                  <CheckCircle2 className="w-3 h-3" /> sesión
-                                </span>
-                              )}
-                              {t.estado === "realizado" && !t.sesion && (
-                                <span className="chip bg-amber-100 text-amber-700">
-                                  <AlertTriangle className="w-3 h-3" /> sin sesión
-                                </span>
+                                <span className="chip bg-violet-100 text-violet-700">🖥 virtual</span>
                               )}
                             </div>
-                            {(t.paciente.tutorNombre ||
-                              t.paciente.tutorTelefono) && (
-                              <p className="text-xs text-ink-500 mt-0.5 flex items-center gap-1">
-                                <Phone className="w-3 h-3" />
-                                {t.paciente.tutorNombre ?? "—"}
-                                {t.paciente.tutorTelefono
-                                  ? ` · ${t.paciente.tutorTelefono}`
-                                  : ""}
-                              </p>
-                            )}
-                          </button>
 
-                          {/* Acciones */}
-                          <div className="shrink-0 flex flex-col items-end gap-1.5">
-                            {/* Meet link — solo turnos virtuales con link */}
-                            {t.modalidad === "virtual" && t.meetLink && (
-                              <a
-                                href={t.meetLink}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full border bg-violet-50 text-violet-700 border-violet-200 hover:bg-violet-100 transition"
-                              >
-                                <Video className="w-3 h-3" /> Meet
-                              </a>
-                            )}
-                            {/* Confirmar turno */}
-                            {!isPast && (
+                            {/* Acciones */}
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              {t.modalidad === "virtual" && t.meetLink && (
+                                <a
+                                  href={t.meetLink}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex items-center gap-1 text-xs font-medium px-3 py-1.5 rounded-full border bg-violet-50 text-violet-700 border-violet-200 hover:bg-violet-100 transition min-h-[36px]"
+                                >
+                                  <Video className="w-3 h-3" /> Meet
+                                </a>
+                              )}
+                              {!isPast && (
+                                <button
+                                  onClick={() => toggleConfirmado(t)}
+                                  title={t.confirmado ? "Marcar sin confirmar" : "Confirmar asistencia"}
+                                  className={
+                                    "flex items-center gap-1 text-xs font-medium px-3 py-1.5 rounded-full border transition min-h-[36px] " +
+                                    (t.confirmado
+                                      ? "bg-brand-100 text-brand-700 border-brand-200 hover:bg-brand-200"
+                                      : "bg-white text-ink-500 border-ink-200 hover:bg-brand-50 hover:text-brand-700 hover:border-brand-200")
+                                  }
+                                >
+                                  {t.confirmado ? <><Bell className="w-3 h-3" /> conf.</> : <><BellOff className="w-3 h-3" /> confirmar</>}
+                                </button>
+                              )}
                               <button
-                                onClick={() => toggleConfirmado(t)}
-                                title={t.confirmado ? "Marcar sin confirmar" : "Confirmar asistencia"}
+                                onClick={() => toggleCobrado(t)}
+                                title={t.cobrado ? "Marcar sin cobrar" : "Marcar cobrado"}
                                 className={
                                   "flex items-center gap-1 text-xs font-medium px-3 py-1.5 rounded-full border transition min-h-[36px] " +
-                                  (t.confirmado
-                                    ? "bg-brand-100 text-brand-700 border-brand-200 hover:bg-brand-200"
-                                    : "bg-white text-ink-500 border-ink-200 hover:bg-brand-50 hover:text-brand-700 hover:border-brand-200")
+                                  (t.cobrado
+                                    ? "bg-sage-100 text-sage-700 border-sage-200 hover:bg-sage-200"
+                                    : "bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100")
                                 }
                               >
-                                {t.confirmado ? <><Bell className="w-3 h-3" /> confirmado</> : <><BellOff className="w-3 h-3" /> confirmar</>}
+                                {t.cobrado ? <><CheckCircle2 className="w-3 h-3" /> cobrado</> : <><CircleDashed className="w-3 h-3" /> cobrar</>}
                               </button>
-                            )}
-                            {/* Cobrado */}
-                            <button
-                              onClick={() => toggleCobrado(t)}
-                              title={t.cobrado ? "Marcar sin cobrar" : "Marcar cobrado"}
-                              className={
-                                "flex items-center gap-1 text-xs font-medium px-3 py-1.5 rounded-full border transition min-h-[36px] " +
-                                (t.cobrado
-                                  ? "bg-sage-100 text-sage-700 border-sage-200 hover:bg-sage-200"
-                                  : "bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100")
-                              }
-                            >
-                              {t.cobrado ? <><CheckCircle2 className="w-3 h-3" /> cobrado</> : <><CircleDashed className="w-3 h-3" /> cobrar</>}
-                            </button>
-                            {/* Cargar sesión — siempre visible si no tiene sesión */}
-                            {!t.sesion && (
-                              <Link
-                                href={`/pacientes/${t.paciente.id}#nueva-sesion`}
-                                className={
-                                  "text-xs font-medium inline-flex items-center gap-1 px-2 py-0.5 rounded-full border transition " +
-                                  (t.estado === "realizado"
-                                    ? "bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100"
-                                    : "text-brand-700 hover:underline border-transparent")
-                                }
-                              >
-                                <StickyNote className="w-3 h-3" />
-                                {t.estado === "realizado" ? "cargar sesión" : "sesión"}
-                              </Link>
-                            )}
+                              {/* Sesión: siempre visible — clickeable si falta cargar, griseado si ya está */}
+                              {t.sesion ? (
+                                <span className="flex items-center gap-1 text-xs font-medium px-3 py-1.5 rounded-full border border-ink-200 bg-ink-50 text-ink-400 min-h-[36px] cursor-default select-none">
+                                  <CheckCircle2 className="w-3 h-3" /> sesión cargada
+                                </span>
+                              ) : (
+                                <Link
+                                  href={`/pacientes/${t.paciente.id}?tab=historia&turno=${t.id}`}
+                                  className="text-xs font-medium inline-flex items-center gap-1 px-3 py-1.5 rounded-full border transition min-h-[36px] bg-brand-50 text-brand-700 border-brand-200 hover:bg-brand-100"
+                                >
+                                  <StickyNote className="w-3 h-3" /> cargar sesión
+                                </Link>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </li>
@@ -574,14 +533,36 @@ function TurnoDetailModal({
           )}
 
           {(paciente.tutorNombre || paciente.tutorTelefono) && (
-            <div className="flex items-center gap-2 text-sm text-ink-600">
-              <Phone className="w-3.5 h-3.5 text-ink-400 shrink-0" />
-              <span>
-                {paciente.tutorNombre ?? "—"}
-                {paciente.tutorTelefono
-                  ? ` · ${paciente.tutorTelefono}`
-                  : ""}
-              </span>
+            <div className="border-t border-ink-100 pt-3 space-y-2">
+              <p className="text-xs font-semibold text-ink-500 uppercase tracking-wider">
+                Tutor / responsable
+              </p>
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                {paciente.tutorNombre && (
+                  <div>
+                    <p className="text-xs text-ink-500 mb-0.5">Nombre</p>
+                    <p className="font-medium text-ink-800">{paciente.tutorNombre}</p>
+                  </div>
+                )}
+                {paciente.tutorRelacion && (
+                  <div>
+                    <p className="text-xs text-ink-500 mb-0.5">Relación</p>
+                    <p className="font-medium text-ink-800 capitalize">{paciente.tutorRelacion}</p>
+                  </div>
+                )}
+                {paciente.tutorTelefono && (
+                  <div className="col-span-2">
+                    <p className="text-xs text-ink-500 mb-0.5">Teléfono</p>
+                    <a
+                      href={`tel:${paciente.tutorTelefono}`}
+                      className="font-medium text-brand-700 hover:underline flex items-center gap-1"
+                    >
+                      <Phone className="w-3.5 h-3.5" />
+                      {paciente.tutorTelefono}
+                    </a>
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>

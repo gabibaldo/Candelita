@@ -22,6 +22,7 @@ export default function QuickNote({ pacientes }: { pacientes: Paciente[] }) {
         body: JSON.stringify({
           pacienteId: Number(pacienteId),
           fecha: new Date().toISOString(),
+          tipo: "nota",
           resumen: texto.trim(),
         }),
       });
@@ -74,7 +75,7 @@ export default function QuickNote({ pacientes }: { pacientes: Paciente[] }) {
               disabled={pacienteId == null || !texto.trim() || saving}
               onClick={guardar}
             >
-              {saving ? "Guardando…" : "Guardar sesión"}
+              {saving ? "Guardando…" : "Guardar nota"}
             </button>
           )}
         </div>

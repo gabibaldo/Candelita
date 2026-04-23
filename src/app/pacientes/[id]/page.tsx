@@ -66,6 +66,7 @@ export default async function PacientePage({
     sesiones: paciente.sesiones.map((s) => ({
       id: s.id,
       fecha: s.fecha.toISOString(),
+      tipo: (s as any).tipo ?? "sesion",
       resumen: s.resumen,
       objetivos: s.objetivos ?? null,
       proximosPasos: s.proximosPasos ?? null,

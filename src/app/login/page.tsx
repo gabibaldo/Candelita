@@ -150,11 +150,14 @@ function LoginForm({ onRecover }: { onRecover: () => void }) {
               onChange={(e) => setRemember(e.target.checked)}
             />
             <div className="w-4 h-4 rounded border border-ink-300 bg-white peer-checked:bg-brand-600 peer-checked:border-brand-600 transition flex items-center justify-center">
-              {remember && (
-                <svg className="w-2.5 h-2.5 text-white" viewBox="0 0 10 8" fill="none">
-                  <path d="M1 4l2.5 2.5L9 1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              )}
+              <svg
+                className={"w-2.5 h-2.5 text-white transition-opacity " + (remember ? "opacity-100" : "opacity-0")}
+                viewBox="0 0 10 8"
+                fill="none"
+                aria-hidden="true"
+              >
+                <path d="M1 4l2.5 2.5L9 1" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
             </div>
           </div>
           <span className="text-sm text-ink-600 group-hover:text-ink-800 transition">

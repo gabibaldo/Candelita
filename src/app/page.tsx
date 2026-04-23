@@ -175,7 +175,9 @@ export default async function Dashboard() {
       obraSocialNombre: t.paciente.obraSocialNombre,
       tutorNombre: t.paciente.tutorNombre,
       tutorTelefono: t.paciente.tutorTelefono,
+      tutorRelacion: t.paciente.tutorRelacion,
       fechaNacimiento: t.paciente.fechaNacimiento?.toISOString() ?? null,
+      diagnostico: t.paciente.diagnostico,
     },
     sesion: t.sesion ? { id: t.sesion.id } : null,
   }));
@@ -185,8 +187,8 @@ export default async function Dashboard() {
       <FadeUp>
         <header className="flex items-center justify-between flex-wrap gap-3">
           <div>
-            <h1 className="text-lg md:text-2xl font-semibold text-ink-800 capitalize leading-tight">
-              {hoyStr}
+            <h1 className="text-lg md:text-2xl font-semibold text-ink-800 leading-tight">
+              {capitalize(hoyStr)}
             </h1>
             <p className="text-xs text-ink-400 mt-0.5">
               {saludo()}, {firstName}
@@ -207,8 +209,8 @@ export default async function Dashboard() {
       </FadeUp>
 
       {/* KPIs */}
-      <StaggerList className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-        <StaggerItem>
+      <StaggerList className="grid grid-cols-2 lg:grid-cols-3 gap-3 items-stretch">
+        <StaggerItem className="h-full">
           <KpiCard
             icon={<CalendarDays className="w-4 h-4" />}
             label="Turnos hoy"
@@ -227,7 +229,7 @@ export default async function Dashboard() {
             }
           />
         </StaggerItem>
-        <StaggerItem>
+        <StaggerItem className="h-full">
           <KpiCard
             icon={<CircleDashed className="w-4 h-4" />}
             label="Pendiente de cobro"
@@ -236,7 +238,7 @@ export default async function Dashboard() {
             tone={pendienteHoy > 0 ? "warn" : "ok"}
           />
         </StaggerItem>
-        <StaggerItem>
+        <StaggerItem className="col-span-2 lg:col-span-1">
           <KpiCard
             icon={<CheckCircle2 className="w-4 h-4" />}
             label="Sesiones cargadas"
@@ -421,32 +423,47 @@ function KpiCard({
     ok: "bg-sage-100 text-sage-700",
     warn: "bg-amber-100 text-amber-700",
   };
+  // Mobile: horizontal (icono izquierda + datos derecha)
+  // Desktop (lg): vertical clásico
   const inner = (
     <>
-      <div
-        className={
-          "inline-flex items-center justify-center w-8 h-8 rounded-lg " +
-          toneMap[tone]
-        }
-      >
-        {icon}
+      {/* Mobile: fila horizontal */}
+      <div className="flex items-center gap-3 lg:hidden">
+        <div className={`shrink-0 inline-flex items-center justify-center w-9 h-9 rounded-xl ${toneMap[tone]}`}>
+          {icon}
+        </div>
+        <div className="min-w-0">
+          <p className="text-[10px] uppercase tracking-wider text-ink-500 font-medium leading-none mb-0.5">
+            {label}
+          </p>
+          <p className="text-lg font-semibold text-ink-800 tabular-nums leading-tight">
+            {value}
+          </p>
+          {sub && (
+            <p className="text-[11px] text-ink-400 leading-tight mt-0.5 truncate">
+              {sub}
+            </p>
+          )}
+        </div>
       </div>
-      <p className="text-xs uppercase tracking-wider text-ink-500 mt-3">
-        {label}
-      </p>
-      <p className="text-xl md:text-2xl font-semibold text-ink-800 tabular-nums mt-0.5">
-        {value}
-      </p>
-      {sub && <p className="text-xs text-ink-500 mt-1">{sub}</p>}
+      {/* Desktop: columna vertical */}
+      <div className="hidden lg:block">
+        <div className={`inline-flex items-center justify-center w-8 h-8 rounded-lg ${toneMap[tone]}`}>
+          {icon}
+        </div>
+        <p className="text-xs uppercase tracking-wider text-ink-500 mt-3">{label}</p>
+        <p className="text-2xl font-semibold text-ink-800 tabular-nums mt-0.5">{value}</p>
+        {sub && <p className="text-xs text-ink-500 mt-1">{sub}</p>}
+      </div>
     </>
   );
   if (href) {
     return (
-      <Link href={href} className="card p-4 block hover:shadow-pop transition">
+      <Link href={href} className="card p-3 lg:p-4 h-full block hover:shadow-pop transition">
         {inner}
       </Link>
     );
   }
-  return <div className="card p-4">{inner}</div>;
+  return <div className="card p-3 lg:p-4 h-full">{inner}</div>;
 }
 

@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { User, CalendarDays, FileText, Paperclip } from "lucide-react";
 import Link from "next/link";
 import SessionForm from "@/components/SessionForm";
@@ -21,6 +22,7 @@ type Turno = {
 type Sesion = {
   id: number;
   fecha: string;
+  tipo: string;
   resumen: string;
   objetivos: string | null;
   proximosPasos: string | null;
@@ -32,6 +34,7 @@ type Paciente = {
   apellido: string;
   fechaNacimiento: string | null;
   telefono: string | null;
+  celular: string | null;
   email: string | null;
   direccion: string | null;
   tutorNombre: string | null;
@@ -68,7 +71,46 @@ const TABS: { key: Tab; label: string; icon: React.ElementType }[] = [
 ];
 
 export default function PacienteTabs({ paciente }: { paciente: Paciente }) {
-  const [tab, setTab] = useState<Tab>("info");
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get("tab") as Tab | null;
+  const turnoParam = searchParams.get("turno");
+
+  // Estado de sesiones centralizado aquí para que SessionForm y SessionList compartan la misma fuente
+  const [sesiones, setSesiones] = useState<Sesion[]>(paciente.sesiones);
+
+  function handleSesionSaved(nueva: Sesion) {
+    setSesiones((prev) =>
+      [nueva, ...prev].sort(
+        (a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime()
+      )
+    );
+  }
+
+  function handleSesionUpdated(updated: Sesion) {
+    setSesiones((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
+  }
+
+  function handleSesionDeleted(id: number) {
+    setSesiones((prev) => prev.filter((s) => s.id !== id));
+  }
+
+  // Si viene de un turno, abrir la tab correcta y pre-cargar fecha + vínculo
+  const linkedTurno = turnoParam
+    ? paciente.turnos.find((t) => t.id === Number(turnoParam))
+    : null;
+  const initialFecha = linkedTurno
+    ? new Date(linkedTurno.inicio)
+        .toLocaleString("sv", { timeZone: "America/Argentina/Buenos_Aires" })
+        .replace(" ", "T")
+        .slice(0, 16)
+    : undefined;
+  const initialTurnoId = linkedTurno ? String(linkedTurno.id) : undefined;
+
+  const [tab, setTab] = useState<Tab>(
+    tabParam && ["info", "turnos", "historia", "archivos"].includes(tabParam)
+      ? tabParam
+      : "info"
+  );
   const isOS = paciente.tipo === "obra_social";
 
   return (
@@ -88,9 +130,9 @@ export default function PacienteTabs({ paciente }: { paciente: Paciente }) {
           >
             <Icon className="w-3.5 h-3.5" />
             {label}
-            {key === "historia" && paciente.sesiones.length > 0 && (
+            {key === "historia" && sesiones.length > 0 && (
               <span className="ml-1 text-[10px] bg-brand-100 text-brand-700 rounded-full px-1.5 py-0.5 font-semibold leading-none">
-                {paciente.sesiones.length}
+                {sesiones.length}
               </span>
             )}
             {key === "turnos" && paciente.turnos.length > 0 && (
@@ -111,6 +153,7 @@ export default function PacienteTabs({ paciente }: { paciente: Paciente }) {
             <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 text-sm">
               <Item label="Fecha de nacimiento" value={formatDate(paciente.fechaNacimiento)} />
               <Item label="Teléfono" value={paciente.telefono ?? "—"} />
+              <Item label="Celular" value={paciente.celular ?? "—"} />
               <Item label="Email" value={paciente.email ?? "—"} />
               <Item label="Dirección" value={paciente.direccion ?? "—"} />
               <Item label="Tutor" value={paciente.tutorNombre ?? "—"} />
@@ -218,11 +261,15 @@ export default function PacienteTabs({ paciente }: { paciente: Paciente }) {
               turnos={paciente.turnos.map((t) => ({
                 id: t.id,
                 inicio: t.inicio,
-                estado: t.estado,
               }))}
+              initialFecha={initialFecha}
+              initialTurnoId={initialTurnoId}
+              onSaved={handleSesionSaved}
             />
             <SessionList
-              initialSesiones={paciente.sesiones}
+              sesiones={sesiones}
+              onUpdated={handleSesionUpdated}
+              onDeleted={handleSesionDeleted}
             />
           </div>
         )}

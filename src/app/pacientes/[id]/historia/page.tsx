@@ -76,6 +76,11 @@ export default async function HistoriaPage({
                   : "Particular"}
               </span>
             </div>
+            {paciente.diagnostico && (
+              <p className="text-sm text-ink-600 mt-2 italic">
+                {paciente.diagnostico}
+              </p>
+            )}
           </div>
           <Link
             href={`/api/historia/${paciente.id}/pdf`}
@@ -145,7 +150,7 @@ export default async function HistoriaPage({
             Las sesiones clínicas aparecerán aquí una vez cargadas.
           </p>
           <Link
-            href={`/pacientes/${paciente.id}#nueva-sesion`}
+            href={`/pacientes/${paciente.id}?tab=historia`}
             className="btn-primary mt-4 inline-flex"
           >
             Cargar primera sesión
@@ -185,7 +190,7 @@ export default async function HistoriaPage({
                 <div className="card p-4 space-y-3">
                   <div>
                     <p className="text-xs font-semibold text-ink-500 uppercase tracking-wider mb-1.5">
-                      Resumen
+                      {(s as any).tipo === "nota" ? "Nota" : "Resumen"}
                     </p>
                     <p className="text-sm text-ink-800 whitespace-pre-wrap leading-relaxed">
                       {s.resumen}

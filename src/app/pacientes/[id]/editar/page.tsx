@@ -23,6 +23,7 @@ export default async function EditarPacientePage({
       ? p.fechaNacimiento.toISOString()
       : null,
     telefono: p.telefono,
+    celular: (p as any).celular ?? null,
     email: p.email,
     direccion: p.direccion,
     tutorNombre: p.tutorNombre,

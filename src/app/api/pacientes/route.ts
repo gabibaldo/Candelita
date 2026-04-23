@@ -9,6 +9,7 @@ const PacienteSchema = z.object({
   apellido: z.string().min(1),
   fechaNacimiento: z.string().optional().nullable(),
   telefono: z.string().optional().nullable(),
+  celular: z.string().optional().nullable(),
   email: z.string().email().optional().nullable().or(z.literal("")),
   direccion: z.string().optional().nullable(),
   tutorNombre: z.string().optional().nullable(),

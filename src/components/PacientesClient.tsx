@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Search, ArrowUpDown } from "lucide-react";
-import { formatMoney, edadDesde } from "@/lib/utils";
+import { edadDesde } from "@/lib/utils";
 
 type SortKey = "apellido" | "sesiones" | "turnos";
 
@@ -14,7 +14,7 @@ type Paciente = {
   tipo: string;
   obraSocialNombre: string | null;
   importeSesion: number;
-  motivoConsulta: string | null;
+  diagnostico: string | null;
   tutorNombre: string | null;
   activo: boolean;
   _count: { sesiones: number; turnos: number };
@@ -145,20 +145,13 @@ export default function PacientesClient() {
                       </span>
                     )}
                   </div>
-                  {p.motivoConsulta && (
-                    <p className="text-sm text-ink-700 mt-1 line-clamp-2">
-                      {p.motivoConsulta}
-                    </p>
-                  )}
                   <p className="text-xs text-ink-500 mt-1">
-                    {p._count.sesiones} sesiones · {p._count.turnos} turnos ·
-                    Tutor: {p.tutorNombre ?? "—"}
+                    {p.diagnostico
+                      ? <span className="text-ink-600">{p.diagnostico}</span>
+                      : <span className="italic">Sin diagnóstico cargado</span>}
                   </p>
                 </div>
-                <div className="text-right">
-                  <p className="text-sm font-medium">
-                    {formatMoney(p.importeSesion)}
-                  </p>
+                <div className="text-right shrink-0">
                   <Link
                     href={`/pacientes/${p.id}/historia`}
                     className="text-xs text-brand-700 hover:underline"
