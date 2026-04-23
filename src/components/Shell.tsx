@@ -10,9 +10,12 @@ import {
   HeartHandshake,
   UserCircle,
   BarChart3,
+  MoreHorizontal,
 } from "lucide-react";
+import { useState } from "react";
 import { useToast } from "./Toast";
 import SidebarWidget from "./SidebarWidget";
+import IdleLogout from "./IdleLogout";
 
 const links = [
   { href: "/", label: "Hoy", icon: LayoutDashboard },
@@ -21,6 +24,10 @@ const links = [
   { href: "/estadisticas", label: "Estadísticas", icon: BarChart3 },
   { href: "/perfil", label: "Perfil", icon: UserCircle },
 ];
+
+// Mobile: solo los primeros 3 en el bottom nav, el resto en "Más"
+const mainLinks = links.slice(0, 3);
+const moreLinks = links.slice(3);
 
 export default function Shell({
   nombre,
@@ -47,9 +54,11 @@ export default function Shell({
   }
 
   const firstName = nombre.split(" ")[0];
+  const [showMore, setShowMore] = useState(false);
 
   return (
     <div className="min-h-screen md:grid md:grid-cols-[220px_1fr]">
+      <IdleLogout />
       {/* Sidebar desktop */}
       <aside className="hidden md:flex md:flex-col sticky top-0 h-screen border-r border-ink-100 bg-white px-3 py-5">
         {/* Logo */}
@@ -145,7 +154,7 @@ export default function Shell({
 
       {/* Bottom tabs mobile */}
       <nav className="md:hidden fixed bottom-0 inset-x-0 z-30 bg-white/95 backdrop-blur border-t border-ink-100 px-3 pt-1.5 pb-2 flex items-stretch justify-around safe-bottom">
-        {links.map((l) => {
+        {mainLinks.map((l) => {
           const Icon = l.icon;
           const active =
             l.href === "/" ? pathname === "/" : pathname.startsWith(l.href);
@@ -165,7 +174,53 @@ export default function Shell({
             </Link>
           );
         })}
+
+        {/* Botón Más */}
+        <button
+          onClick={() => setShowMore((v) => !v)}
+          className={clsx(
+            "flex-1 flex flex-col items-center gap-1 px-2 py-1.5 rounded-xl text-xs font-semibold transition-all",
+            showMore || moreLinks.some((l) => pathname.startsWith(l.href))
+              ? "text-brand-700 bg-brand-50"
+              : "text-ink-400 hover:text-ink-600"
+          )}
+        >
+          <MoreHorizontal className="w-5 h-5" />
+          Más
+        </button>
       </nav>
+
+      {/* Menú "Más" */}
+      {showMore && (
+        <>
+          <div
+            className="md:hidden fixed inset-0 z-[35]"
+            onClick={() => setShowMore(false)}
+          />
+          <div className="md:hidden fixed bottom-[4.5rem] right-3 z-40 bg-white rounded-2xl shadow-xl border border-ink-100 p-2 min-w-[180px]">
+            {moreLinks.map((l) => {
+              const Icon = l.icon;
+              const active = pathname.startsWith(l.href);
+              return (
+                <Link
+                  key={l.href}
+                  href={l.href}
+                  onClick={() => setShowMore(false)}
+                  className={clsx(
+                    "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all",
+                    active
+                      ? "bg-brand-50 text-brand-700"
+                      : "text-ink-600 hover:bg-ink-50 hover:text-ink-800"
+                  )}
+                >
+                  <Icon className={clsx("w-4 h-4", active ? "text-brand-600" : "text-ink-400")} />
+                  {l.label}
+                </Link>
+              );
+            })}
+          </div>
+        </>
+      )}
     </div>
   );
 }

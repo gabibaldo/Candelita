@@ -545,7 +545,7 @@ function TurnoModal({
       <form
         onClick={(e) => e.stopPropagation()}
         onSubmit={save}
-        className="bg-white rounded-xl shadow-lg w-full max-w-lg p-6 space-y-4 max-h-[90vh] overflow-y-auto"
+        className="bg-white rounded-xl shadow-lg w-full max-w-lg p-6 space-y-4 max-h-[90dvh] overflow-y-auto"
       >
         <div className="flex items-center justify-between">
           <h3 className="font-semibold text-brand-800">

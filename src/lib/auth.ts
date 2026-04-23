@@ -20,19 +20,26 @@ export type SessionPayload = {
   nombre: string;
 };
 
-export async function createSession(payload: SessionPayload) {
-  const token = await new SignJWT({ ...payload })
+// Duración de la sesión: 90 minutos (se renueva con cada request)
+export const SESSION_DURATION_SECONDS = 30 * 60;
+
+export async function createToken(payload: SessionPayload): Promise<string> {
+  return new SignJWT({ ...payload })
     .setProtectedHeader({ alg: ALG })
     .setIssuedAt()
-    .setExpirationTime("30d")
+    .setExpirationTime(`${SESSION_DURATION_SECONDS}s`)
     .sign(getSecret());
+}
+
+export async function createSession(payload: SessionPayload) {
+  const token = await createToken(payload);
 
   const store = await cookies();
   store.set(COOKIE_NAME, token, {
     httpOnly: true,
-    secure: process.env.SECURE_COOKIE === "true",
+    secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
-    maxAge: 60 * 60 * 24 * 30,
+    maxAge: SESSION_DURATION_SECONDS,
     path: "/",
   });
 }

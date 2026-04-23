@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyToken, SESSION_COOKIE } from "@/lib/auth";
+import { verifyToken, SESSION_COOKIE, createToken, SESSION_DURATION_SECONDS } from "@/lib/auth";
 
 const PUBLIC_PATHS = [
   "/login",
@@ -36,7 +36,17 @@ export async function proxy(req: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  return NextResponse.next();
+  // Sesión deslizante: renovar el token en cada request autenticado
+  const newToken = await createToken(session);
+  const response = NextResponse.next();
+  response.cookies.set(SESSION_COOKIE, newToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: SESSION_DURATION_SECONDS,
+    path: "/",
+  });
+  return response;
 }
 
 export const config = {

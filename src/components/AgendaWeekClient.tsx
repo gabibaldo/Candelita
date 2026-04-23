@@ -356,7 +356,7 @@ export default function AgendaWeekClient({
                                 onClick={() => toggleConfirmado(t)}
                                 title={t.confirmado ? "Marcar sin confirmar" : "Confirmar asistencia"}
                                 className={
-                                  "flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full border transition " +
+                                  "flex items-center gap-1 text-xs font-medium px-3 py-1.5 rounded-full border transition min-h-[36px] " +
                                   (t.confirmado
                                     ? "bg-brand-100 text-brand-700 border-brand-200 hover:bg-brand-200"
                                     : "bg-white text-ink-500 border-ink-200 hover:bg-brand-50 hover:text-brand-700 hover:border-brand-200")
@@ -370,7 +370,7 @@ export default function AgendaWeekClient({
                               onClick={() => toggleCobrado(t)}
                               title={t.cobrado ? "Marcar sin cobrar" : "Marcar cobrado"}
                               className={
-                                "flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full border transition " +
+                                "flex items-center gap-1 text-xs font-medium px-3 py-1.5 rounded-full border transition min-h-[36px] " +
                                 (t.cobrado
                                   ? "bg-sage-100 text-sage-700 border-sage-200 hover:bg-sage-200"
                                   : "bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100")
@@ -439,7 +439,7 @@ function TurnoDetailModal({
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-xl shadow-lg w-full max-w-md overflow-hidden"
+        className="bg-white rounded-xl shadow-lg w-full max-w-md overflow-hidden max-h-[90dvh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
