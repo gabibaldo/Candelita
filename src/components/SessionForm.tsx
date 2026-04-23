@@ -94,6 +94,7 @@ function TurnoSelect({
 type NuevaSesion = {
   id: number;
   fecha: string;
+  tipo: string;
   resumen: string;
   objetivos: string | null;
   proximosPasos: string | null;
