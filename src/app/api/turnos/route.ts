@@ -50,8 +50,6 @@ export async function GET(req: NextRequest) {
           apellido: true,
           tipo: true,
           importeSesion: true,
-          motivoConsulta: true,
-          diagnostico: true,
           obraSocialNombre: true,
           tutorNombre: true,
           tutorTelefono: true,
