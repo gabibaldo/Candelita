@@ -40,6 +40,7 @@ export default async function PacientePage({
     apellido: paciente.apellido,
     fechaNacimiento: paciente.fechaNacimiento?.toISOString() ?? null,
     telefono: paciente.telefono,
+    celular: (paciente as any).celular ?? null,
     email: paciente.email,
     direccion: paciente.direccion,
     tutorNombre: paciente.tutorNombre,
