@@ -389,13 +389,21 @@ export default function Calendar({
         </div>
       )}
 
-      {bloqueos.length > 0 && (
+      {bloqueos.filter((b) => {
+        if (!rango) return true;
+        const inicio = new Date(b.inicio);
+        return inicio >= rango.from && inicio < rango.to;
+      }).length > 0 && (
         <div className="card p-3">
           <p className="text-[11px] font-semibold text-ink-400 uppercase tracking-wider mb-2">
             Días bloqueados
           </p>
           <ul className="flex flex-wrap gap-2">
-            {bloqueos.map((b) => {
+            {bloqueos.filter((b) => {
+              if (!rango) return true;
+              const inicio = new Date(b.inicio);
+              return inicio >= rango.from && inicio < rango.to;
+            }).map((b) => {
               const label = new Date(b.inicio).toLocaleDateString("es-AR", {
                 weekday: "short",
                 day: "2-digit",
