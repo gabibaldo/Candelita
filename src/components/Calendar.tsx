@@ -389,21 +389,22 @@ export default function Calendar({
         </div>
       )}
 
-      {bloqueos.filter((b) => {
-        if (!rango) return true;
-        const inicio = new Date(b.inicio);
-        return inicio >= rango.from && inicio < rango.to;
-      }).length > 0 && (
+      {(() => {
+        const bloqueosVisibles = bloqueos.filter((b) => {
+          if (!rango) return true;
+          const inicio = new Date(b.inicio);
+          return inicio >= rango.from && inicio < rango.to;
+        });
+        return (
         <div className="card p-3">
           <p className="text-[11px] font-semibold text-ink-400 uppercase tracking-wider mb-2">
             Días bloqueados
           </p>
+          {bloqueosVisibles.length === 0 ? (
+            <p className="text-xs text-ink-300 italic">Sin bloqueos en este período</p>
+          ) : (
           <ul className="flex flex-wrap gap-2">
-            {bloqueos.filter((b) => {
-              if (!rango) return true;
-              const inicio = new Date(b.inicio);
-              return inicio >= rango.from && inicio < rango.to;
-            }).map((b) => {
+            {bloqueosVisibles.map((b) => {
               const label = new Date(b.inicio).toLocaleDateString("es-AR", {
                 weekday: "short",
                 day: "2-digit",
@@ -433,8 +434,10 @@ export default function Calendar({
               );
             })}
           </ul>
+          )}
         </div>
-      )}
+        );
+      })()}
 
       <div
         ref={calWrapRef}
