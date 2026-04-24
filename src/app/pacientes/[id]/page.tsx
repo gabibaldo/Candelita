@@ -119,7 +119,7 @@ export default async function PacientePage({
           >
             Editar
           </Link>
-          <DeletePatientButton id={paciente.id} />
+          <DeletePatientButton id={paciente.id} activo={paciente.activo} />
         </div>
       </header>
 

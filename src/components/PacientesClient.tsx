@@ -42,7 +42,7 @@ export default function PacientesClient() {
       setLoading(true);
       const params = new URLSearchParams();
       if (q) params.set("q", q);
-      if (!inactivos) params.set("activo", "true");
+      params.set("activo", inactivos ? "false" : "true");
       const res = await fetch("/api/pacientes?" + params.toString());
       if (res.ok) setPacientes(await res.json());
       setLoading(false);

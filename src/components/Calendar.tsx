@@ -172,22 +172,28 @@ export default function Calendar({
       };
     });
 
-    const bloqueoEvents = bloqueos.map((b) => {
-      const arDate = new Date(b.inicio).toLocaleDateString("en-CA", {
-        timeZone: "America/Argentina/Buenos_Aires",
+    const bloqueoEvents = bloqueos
+      .filter((b) => {
+        if (!rango) return true;
+        const inicio = new Date(b.inicio);
+        return inicio >= rango.from && inicio <= rango.to;
+      })
+      .map((b) => {
+        const arDate = new Date(b.inicio).toLocaleDateString("en-CA", {
+          timeZone: "America/Argentina/Buenos_Aires",
+        });
+        return {
+          id: `bloqueo-${b.id}`,
+          title: b.motivo || "Día bloqueado",
+          start: `${arDate}T14:00:00-03:00`,
+          end: `${arDate}T21:00:00-03:00`,
+          display: "background" as const,
+          backgroundColor: "#ede9fe",
+        };
       });
-      return {
-        id: `bloqueo-${b.id}`,
-        title: b.motivo || "Día bloqueado",
-        start: `${arDate}T14:00:00-03:00`,
-        end: `${arDate}T21:00:00-03:00`,
-        display: "background" as const,
-        backgroundColor: "#ede9fe",
-      };
-    });
 
     return [...turnoEvents, ...bloqueoEvents];
-  }, [turnos, bloqueos]);
+  }, [turnos, bloqueos, rango]);
 
   async function handleDrop(arg: EventDropArg | ResizeArg) {
     const id = Number(arg.event.id);
