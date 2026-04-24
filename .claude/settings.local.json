@@ -22,7 +22,8 @@
       "Bash(curl -s http://localhost:3000/login -o /dev/null -w \"%{http_code}\")",
       "Bash(openssl rand *)",
       "Bash(npx tsx -e ' *)",
-      "Bash(git -C \"/Users/gabrielbaldomir/Documents/Claude/Projects/Candelita NO durmio siesta\" status)"
+      "Bash(git -C \"/Users/gabrielbaldomir/Documents/Claude/Projects/Candelita NO durmio siesta\" status)",
+      "Read(//Users/gabrielbaldomir/.claude/**)"
     ]
   }
 }

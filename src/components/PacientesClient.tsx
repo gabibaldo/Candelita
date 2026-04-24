@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { Search, X, UserX } from "lucide-react";
 import { edadDesde } from "@/lib/utils";
@@ -50,16 +50,14 @@ export default function PacientesClient() {
     return () => { if (timerRef.current) clearTimeout(timerRef.current); };
   }, [q, inactivos]);
 
-  function sortedPacientes() {
+  const lista = useMemo(() => {
     const list = [...pacientes];
     if (sort === "sesiones") return list.sort((a, b) => b._count.sesiones - a._count.sesiones);
     if (sort === "turnos") return list.sort((a, b) => b._count.turnos - a._count.turnos);
     return list.sort((a, b) =>
       a.apellido.localeCompare(b.apellido, "es") || a.nombre.localeCompare(b.nombre, "es")
     );
-  }
-
-  const lista = sortedPacientes();
+  }, [pacientes, sort]);
 
   return (
     <div className="space-y-4">

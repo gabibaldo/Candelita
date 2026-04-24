@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { User, CalendarDays, FileText, Paperclip, Target, Plus, Check, Search } from "lucide-react";
 import Link from "next/link";
@@ -86,16 +86,20 @@ function ObjetivosChecklist({ pacienteId, initialText }: { pacienteId: number; i
   const [items, setItems] = useState(() => parseObjetivos(initialText));
   const [nuevo, setNuevo] = useState("");
   const [saving, setSaving] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  async function save(next: typeof items) {
+  function save(next: typeof items) {
     setItems(next);
     setSaving(true);
-    await fetch(`/api/pacientes/${pacienteId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ objetivosTerapeuticos: serializeObjetivos(next) }),
-    });
-    setSaving(false);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(async () => {
+      await fetch(`/api/pacientes/${pacienteId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ objetivosTerapeuticos: serializeObjetivos(next) }),
+      });
+      setSaving(false);
+    }, 600);
   }
 
   function toggle(i: number) {
@@ -213,7 +217,11 @@ export default function PacienteTabs({ paciente }: { paciente: Paciente }) {
     if (filtroTipo !== "all" && s.tipo !== filtroTipo) return false;
     if (filtroBusqueda) {
       const q = filtroBusqueda.toLowerCase();
-      if (!s.resumen.toLowerCase().includes(q) && !s.objetivos?.toLowerCase().includes(q)) return false;
+      if (
+        !s.resumen.toLowerCase().includes(q) &&
+        !s.objetivos?.toLowerCase().includes(q) &&
+        !s.proximosPasos?.toLowerCase().includes(q)
+      ) return false;
     }
     if (filtroDesde && new Date(s.fecha) < new Date(filtroDesde + "T00:00:00-03:00")) return false;
     if (filtroHasta && new Date(s.fecha) > new Date(filtroHasta + "T23:59:59-03:00")) return false;

@@ -92,5 +92,7 @@ export async function deleteMeetEvent(
     expiry_date: tokenExpiry?.getTime(),
   });
   const calendar = google.calendar({ version: "v3", auth });
-  await calendar.events.delete({ calendarId: "primary", eventId: googleEventId }).catch(() => {});
+  await calendar.events.delete({ calendarId: "primary", eventId: googleEventId }).catch((err) => {
+    console.error("[Google Calendar] delete event failed:", err?.message ?? err);
+  });
 }

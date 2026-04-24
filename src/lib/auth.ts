@@ -6,9 +6,9 @@ const ALG = "HS256";
 
 function getSecret() {
   const secret = process.env.AUTH_SECRET;
-  if (!secret || secret.length < 16) {
+  if (!secret || secret.length < 32) {
     throw new Error(
-      "AUTH_SECRET no configurado o demasiado corto (mínimo 16 chars)."
+      "AUTH_SECRET no configurado o demasiado corto (mínimo 32 chars)."
     );
   }
   return new TextEncoder().encode(secret);

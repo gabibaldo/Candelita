@@ -14,6 +14,7 @@ export async function POST(req: NextRequest) {
   if (!s) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   const { inicio, fin, motivo } = await req.json();
   if (!inicio || !fin) return NextResponse.json({ error: "inicio y fin son requeridos" }, { status: 400 });
+  if (new Date(fin) <= new Date(inicio)) return NextResponse.json({ error: "fin debe ser posterior a inicio" }, { status: 400 });
   const bloqueo = await prisma.bloqueoDia.create({
     data: { inicio: new Date(inicio), fin: new Date(fin), motivo: motivo || null },
   });

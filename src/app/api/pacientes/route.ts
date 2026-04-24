@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { getSession } from "@/lib/auth";
 import { z } from "zod";
+import type { Prisma } from "@prisma/client";
 
 export const runtime = "nodejs";
 
@@ -53,11 +55,14 @@ function stripAccents(s: string) {
 }
 
 export async function GET(req: NextRequest) {
+  const s = await getSession();
+  if (!s) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+
   const { searchParams } = new URL(req.url);
   const q = searchParams.get("q")?.trim() ?? "";
   const activo = searchParams.get("activo");
 
-  const where: any = {};
+  const where: Prisma.PacienteWhereInput = {};
   if (activo === "true") where.activo = true;
   if (activo === "false") where.activo = false;
 
@@ -90,6 +95,9 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const s = await getSession();
+  if (!s) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+
   const body = await req.json().catch(() => null);
   const parsed = PacienteSchema.safeParse(body);
   if (!parsed.success) {

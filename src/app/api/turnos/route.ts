@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { createCalendarEvent } from "@/lib/google";
 import { z } from "zod";
+import type { Prisma } from "@prisma/client";
 
 export const runtime = "nodejs";
 
@@ -26,12 +27,15 @@ function addMinutes(d: Date, min: number) {
 }
 
 export async function GET(req: NextRequest) {
+  const s = await getSession();
+  if (!s) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+
   const { searchParams } = new URL(req.url);
   const from = searchParams.get("from");
   const to = searchParams.get("to");
   const pacienteId = searchParams.get("pacienteId");
 
-  const where: any = {};
+  const where: Prisma.TurnoWhereInput = {};
   if (from || to) {
     where.inicio = {};
     if (from) where.inicio.gte = new Date(from);
@@ -66,6 +70,9 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const s = await getSession();
+  if (!s) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+
   const body = await req.json().catch(() => null);
   const parsed = TurnoSchema.safeParse(body);
   if (!parsed.success) {

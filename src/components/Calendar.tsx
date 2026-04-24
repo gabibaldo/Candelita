@@ -90,7 +90,7 @@ export default function Calendar({
     if (typeof window !== "undefined" && window.innerWidth < 768) return "timeGridDay";
     return "timeGridWeek";
   });
-  const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
+  const isMobile = typeof window !== "undefined" && window.innerWidth < 768; // eslint-disable-line
   const [rango, setRango] = useState<{ from: Date; to: Date } | null>(null);
   const [bloqueos, setBloqueos] = useState<BloqueoDia[]>([]);
   const [showBloqueoForm, setShowBloqueoForm] = useState(false);
@@ -110,12 +110,12 @@ export default function Calendar({
   const calRef = useRef<FullCalendar>(null);
   const calWrapRef = useRef<HTMLDivElement>(null);
 
-  async function cargarBloqueos() {
+  const cargarBloqueos = useCallback(async () => {
     const res = await fetch("/api/bloqueos");
     if (res.ok) setBloqueos(await res.json());
-  }
+  }, []);
 
-  useEffect(() => { cargarBloqueos(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { cargarBloqueos(); }, [cargarBloqueos]);
 
   async function cargarTurnos(from: Date, to: Date) {
     const params = new URLSearchParams({
@@ -274,8 +274,9 @@ export default function Calendar({
     }
     const time = slotRow.getAttribute("data-time"); // "14:30:00"
     if (!time) { setHoverTooltip(null); return; }
-    const [h, m] = time.split(":");
-    setHoverTooltip({ time: `${h}:${m}`, x: e.clientX, y: e.clientY });
+    const parts = time.split(":");
+    if (parts.length < 2) { setHoverTooltip(null); return; }
+    setHoverTooltip({ time: `${parts[0]}:${parts[1]}`, x: e.clientX, y: e.clientY });
   }, []);
 
   return (
@@ -412,8 +413,8 @@ export default function Calendar({
                   </span>
                   <button
                     onClick={async () => {
-                      await fetch(`/api/bloqueos/${b.id}`, { method: "DELETE" });
-                      cargarBloqueos();
+                      const res = await fetch(`/api/bloqueos/${b.id}`, { method: "DELETE" });
+                      if (res.ok) cargarBloqueos();
                     }}
                     className="ml-0.5 hover:text-red-500 transition leading-none"
                     title="Eliminar bloqueo"
@@ -638,6 +639,9 @@ function TurnoModal({
         return;
       }
     }
+    if (!inicioDate || !inicioTime) { setErr("Fecha y hora son obligatorias."); return; }
+    const inicioISO = new Date(`${inicioDate}T${inicioTime}:00-03:00`);
+    if (isNaN(inicioISO.getTime())) { setErr("Fecha u hora inválida."); return; }
     setSaving(true);
     setErr(null);
     try {
