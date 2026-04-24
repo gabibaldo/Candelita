@@ -61,7 +61,7 @@ function fmtDateTime(d: Date | null | undefined) {
 }
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id: idStr } = await params;
@@ -69,9 +69,21 @@ export async function GET(
   if (id == null)
     return NextResponse.json({ error: "id inválido" }, { status: 400 });
 
+  const desde = req.nextUrl.searchParams.get("desde");
+  const hasta = req.nextUrl.searchParams.get("hasta");
+
+  const fechaFilter: Record<string, Date> = {};
+  if (desde) fechaFilter.gte = new Date(desde + "T00:00:00-03:00");
+  if (hasta) fechaFilter.lte = new Date(hasta + "T23:59:59-03:00");
+
   const paciente = await prisma.paciente.findUnique({
     where: { id },
-    include: { sesiones: { orderBy: { fecha: "asc" } } },
+    include: {
+      sesiones: {
+        where: Object.keys(fechaFilter).length ? { fecha: fechaFilter } : undefined,
+        orderBy: { fecha: "asc" },
+      },
+    },
   });
   if (!paciente)
     return NextResponse.json({ error: "No encontrado" }, { status: 404 });

@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Search, ArrowUpDown } from "lucide-react";
+import { Search, X, UserX } from "lucide-react";
 import { edadDesde } from "@/lib/utils";
 
 type SortKey = "apellido" | "sesiones" | "turnos";
@@ -17,7 +17,15 @@ type Paciente = {
   diagnostico: string | null;
   tutorNombre: string | null;
   activo: boolean;
+  ultimoTurno: string | null;
   _count: { sesiones: number; turnos: number };
+};
+
+const INACTIVO_SEMANAS = 4;
+function semanasSinTurno(ultimoTurno: string | null): number | null {
+  if (!ultimoTurno) return null;
+  const diff = Date.now() - new Date(ultimoTurno).getTime();
+  return Math.floor(diff / (7 * 24 * 3600 * 1000));
 };
 
 export default function PacientesClient() {
@@ -69,36 +77,59 @@ export default function PacientesClient() {
         </Link>
       </header>
 
-      <div className="card p-3 flex gap-2 flex-wrap items-center">
-        <div className="relative flex-1 min-w-[220px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-400 pointer-events-none" />
+      <div className="card p-4 space-y-3">
+        {/* Barra de búsqueda */}
+        <div className="relative">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-400 pointer-events-none" />
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Buscar por nombre, apellido o tutor…"
-            className="input pl-9 w-full"
+            className="input pl-10 pr-9 w-full h-11 rounded-xl text-sm"
           />
+          {q && (
+            <button
+              onClick={() => setQ("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-400 hover:text-ink-700 transition"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
         </div>
-        <div className="flex items-center gap-1.5 text-sm text-ink-600 shrink-0">
-          <ArrowUpDown className="w-3.5 h-3.5 text-ink-400" />
-          <select
-            className="input py-1.5 text-sm w-auto pr-8"
-            value={sort}
-            onChange={(e) => setSort(e.target.value as SortKey)}
+
+        {/* Filtros secundarios */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-[11px] text-ink-400 font-medium uppercase tracking-wider mr-0.5">
+            Ordenar
+          </span>
+          <div className="flex items-center gap-0.5 bg-ink-100/60 rounded-lg p-0.5">
+            {(["apellido", "sesiones", "turnos"] as SortKey[]).map((key) => (
+              <button
+                key={key}
+                onClick={() => setSort(key)}
+                className={`text-xs px-3 py-1.5 rounded-md font-medium transition-all ${
+                  sort === key
+                    ? "bg-white text-brand-700 shadow-sm"
+                    : "text-ink-500 hover:text-ink-700"
+                }`}
+              >
+                {key === "apellido" ? "Apellido" : key === "sesiones" ? "Sesiones" : "Turnos"}
+              </button>
+            ))}
+          </div>
+
+          <button
+            onClick={() => setInactivos(!inactivos)}
+            className={`ml-auto flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg font-medium border transition-all ${
+              inactivos
+                ? "bg-brand-50 text-brand-700 border-brand-200"
+                : "bg-white text-ink-500 border-ink-200 hover:border-ink-300 hover:text-ink-700"
+            }`}
           >
-            <option value="apellido">Apellido</option>
-            <option value="sesiones">Más sesiones</option>
-            <option value="turnos">Más turnos</option>
-          </select>
+            <UserX className="w-3.5 h-3.5" />
+            Inactivos
+          </button>
         </div>
-        <label className="flex items-center gap-2 text-sm text-ink-600 px-2 cursor-pointer select-none">
-          <input
-            type="checkbox"
-            checked={inactivos}
-            onChange={(e) => setInactivos(e.target.checked)}
-          />
-          Incluir inactivos
-        </label>
       </div>
 
       {loading ? (
@@ -144,6 +175,17 @@ export default function PacientesClient() {
                         inactivo
                       </span>
                     )}
+                    {p.activo && (() => {
+                      const sem = semanasSinTurno(p.ultimoTurno);
+                      if (sem === null || sem >= INACTIVO_SEMANAS) {
+                        return (
+                          <span className="chip bg-amber-100 text-amber-700">
+                            {sem === null ? "sin turnos" : `${sem}s sin turno`}
+                          </span>
+                        );
+                      }
+                      return null;
+                    })()}
                   </div>
                   <p className="text-xs text-ink-500 mt-1">
                     {p.diagnostico

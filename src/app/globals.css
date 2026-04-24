@@ -63,6 +63,24 @@ html, body {
 .fc a { text-decoration: none !important; }
 .fc .fc-non-business { background: #f4f1f9 !important; opacity: 0.6; }
 
+/* Columnas iguales en vista mes */
+.fc .fc-daygrid-body,
+.fc .fc-daygrid-body table,
+.fc .fc-col-header,
+.fc .fc-col-header table,
+.fc .fc-scrollgrid-sync-table {
+  width: 100% !important;
+  table-layout: fixed !important;
+}
+/* Eventos en mes: texto completo sin overflow */
+.fc .fc-daygrid-event .fc-event-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.fc .fc-daygrid-event-dot { display: none; }
+.fc .fc-daygrid-event { padding: 1px 4px; }
+
 /* Componentes */
 @layer components {
   .input, .textarea, .select {

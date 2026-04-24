@@ -11,16 +11,19 @@ import {
   UserCircle,
   BarChart3,
   MoreHorizontal,
+  Banknote,
 } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "./Toast";
 import SidebarWidget from "./SidebarWidget";
 import IdleLogout from "./IdleLogout";
+import GlobalSearch from "./GlobalSearch";
 
 const links = [
   { href: "/", label: "Hoy", icon: LayoutDashboard },
   { href: "/calendario", label: "Calendario", icon: CalendarIcon },
   { href: "/pacientes", label: "Pacientes", icon: Users },
+  { href: "/cobros", label: "Cobros", icon: Banknote },
   { href: "/estadisticas", label: "Estadísticas", icon: BarChart3 },
   { href: "/perfil", label: "Perfil", icon: UserCircle },
 ];
@@ -59,6 +62,7 @@ export default function Shell({
   return (
     <div className="min-h-screen md:grid md:grid-cols-[220px_1fr]">
       <IdleLogout />
+      <GlobalSearch />
       {/* Sidebar desktop */}
       <aside className="hidden md:flex md:flex-col sticky top-0 h-screen border-r border-ink-100 bg-white px-3 py-5">
         {/* Logo */}

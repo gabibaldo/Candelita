@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { User, CalendarDays, FileText, Paperclip } from "lucide-react";
+import { User, CalendarDays, FileText, Paperclip, Target, Plus, Check, Search } from "lucide-react";
 import Link from "next/link";
 import SessionForm from "@/components/SessionForm";
 import SessionList from "@/components/SessionList";
@@ -63,12 +63,102 @@ function Item({ label, value }: { label: string; value: string }) {
   );
 }
 
-const TABS: { key: Tab; label: string; icon: React.ElementType }[] = [
-  { key: "info",    label: "Información",    icon: User },
-  { key: "turnos",  label: "Turnos",         icon: CalendarDays },
-  { key: "historia",label: "Historia clínica", icon: FileText },
-  { key: "archivos",label: "Archivos",       icon: Paperclip },
+const TABS: { key: Tab; label: string; shortLabel: string; icon: React.ElementType }[] = [
+  { key: "info",     label: "Información",     shortLabel: "Info",     icon: User },
+  { key: "turnos",   label: "Turnos",          shortLabel: "Turnos",   icon: CalendarDays },
+  { key: "historia", label: "Historia clínica",shortLabel: "Historia", icon: FileText },
+  { key: "archivos", label: "Archivos",        shortLabel: "Archivos", icon: Paperclip },
 ];
+
+// ── Helpers objetivos terapéuticos ─────────────────────────────────────────
+function parseObjetivos(text: string | null): Array<{ texto: string; logrado: boolean }> {
+  if (!text?.trim()) return [];
+  return text.split("\n").map((l) => l.trim()).filter(Boolean).map((l) => ({
+    logrado: /^\[x\]/i.test(l),
+    texto: l.replace(/^\[.?\]\s*/, ""),
+  }));
+}
+function serializeObjetivos(items: Array<{ texto: string; logrado: boolean }>): string {
+  return items.map((i) => `${i.logrado ? "[x]" : "[ ]"} ${i.texto}`).join("\n");
+}
+
+function ObjetivosChecklist({ pacienteId, initialText }: { pacienteId: number; initialText: string | null }) {
+  const [items, setItems] = useState(() => parseObjetivos(initialText));
+  const [nuevo, setNuevo] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  async function save(next: typeof items) {
+    setItems(next);
+    setSaving(true);
+    await fetch(`/api/pacientes/${pacienteId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ objetivosTerapeuticos: serializeObjetivos(next) }),
+    });
+    setSaving(false);
+  }
+
+  function toggle(i: number) {
+    save(items.map((item, idx) => idx === i ? { ...item, logrado: !item.logrado } : item));
+  }
+
+  function agregar() {
+    if (!nuevo.trim()) return;
+    save([...items, { texto: nuevo.trim(), logrado: false }]);
+    setNuevo("");
+  }
+
+  function eliminar(i: number) {
+    save(items.filter((_, idx) => idx !== i));
+  }
+
+  return (
+    <div className="mt-5 pt-4 border-t border-ink-100">
+      <div className="flex items-center justify-between mb-2">
+        <p className="text-xs font-semibold text-brand-600 flex items-center gap-1.5">
+          <Target className="w-3.5 h-3.5" /> Objetivos terapéuticos
+        </p>
+        {saving && <span className="text-[10px] text-ink-400">Guardando…</span>}
+      </div>
+      {items.length > 0 && (
+        <ul className="space-y-1.5 mb-3">
+          {items.map((item, i) => (
+            <li key={i} className="flex items-start gap-2 group">
+              <button
+                onClick={() => toggle(i)}
+                className={`shrink-0 mt-0.5 w-4 h-4 rounded border transition flex items-center justify-center ${
+                  item.logrado ? "bg-sage-500 border-sage-500 text-white" : "border-ink-300 hover:border-brand-400"
+                }`}
+              >
+                {item.logrado && <Check className="w-2.5 h-2.5" />}
+              </button>
+              <span className={`text-sm flex-1 leading-snug ${item.logrado ? "line-through text-ink-400" : "text-ink-800"}`}>
+                {item.texto}
+              </span>
+              <button
+                onClick={() => eliminar(i)}
+                className="opacity-0 group-hover:opacity-100 transition text-ink-300 hover:text-red-500 text-xs shrink-0 mt-0.5"
+              >✕</button>
+            </li>
+          ))}
+        </ul>
+      )}
+      <div className="flex gap-2">
+        <input
+          type="text"
+          className="input text-sm flex-1 h-8"
+          placeholder="Nuevo objetivo…"
+          value={nuevo}
+          onChange={(e) => setNuevo(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); agregar(); } }}
+        />
+        <button onClick={agregar} disabled={!nuevo.trim()} className="btn-primary text-xs py-1 px-3 h-8">
+          <Plus className="w-3.5 h-3.5" />
+        </button>
+      </div>
+    </div>
+  );
+}
 
 export default function PacienteTabs({ paciente }: { paciente: Paciente }) {
   const searchParams = useSearchParams();
@@ -113,26 +203,46 @@ export default function PacienteTabs({ paciente }: { paciente: Paciente }) {
   );
   const isOS = paciente.tipo === "obra_social";
 
+  // Filtros historia clínica
+  const [filtroTipo, setFiltroTipo] = useState<"all" | "sesion" | "nota">("all");
+  const [filtroBusqueda, setFiltroBusqueda] = useState("");
+  const [filtroDesde, setFiltroDesde] = useState("");
+  const [filtroHasta, setFiltroHasta] = useState("");
+
+  const sesionesFiltradas = sesiones.filter((s) => {
+    if (filtroTipo !== "all" && s.tipo !== filtroTipo) return false;
+    if (filtroBusqueda) {
+      const q = filtroBusqueda.toLowerCase();
+      if (!s.resumen.toLowerCase().includes(q) && !s.objetivos?.toLowerCase().includes(q)) return false;
+    }
+    if (filtroDesde && new Date(s.fecha) < new Date(filtroDesde + "T00:00:00-03:00")) return false;
+    if (filtroHasta && new Date(s.fecha) > new Date(filtroHasta + "T23:59:59-03:00")) return false;
+    return true;
+  });
+
   return (
     <div className="space-y-0">
       {/* Tab bar */}
       <div className="flex border-b border-ink-200 overflow-x-auto scrollbar-none -mb-px">
-        {TABS.map(({ key, label, icon: Icon }) => (
+        {TABS.map(({ key, label, shortLabel, icon: Icon }) => (
           <button
             key={key}
             onClick={() => setTab(key)}
             className={
-              "flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 transition-colors shrink-0 " +
+              "flex items-center gap-1.5 px-3 sm:px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 transition-colors shrink-0 " +
               (tab === key
                 ? "border-brand-600 text-brand-700"
                 : "border-transparent text-ink-500 hover:text-ink-700 hover:border-ink-300")
             }
           >
             <Icon className="w-3.5 h-3.5" />
-            {label}
+            <span className="hidden sm:inline">{label}</span>
+            <span className="sm:hidden">{shortLabel}</span>
             {key === "historia" && sesiones.length > 0 && (
               <span className="ml-1 text-[10px] bg-brand-100 text-brand-700 rounded-full px-1.5 py-0.5 font-semibold leading-none">
-                {sesiones.length}
+                {sesionesFiltradas.length !== sesiones.length
+                  ? `${sesionesFiltradas.length}/${sesiones.length}`
+                  : sesiones.length}
               </span>
             )}
             {key === "turnos" && paciente.turnos.length > 0 && (
@@ -164,6 +274,29 @@ export default function PacienteTabs({ paciente }: { paciente: Paciente }) {
                 <>
                   <Item label="N° afiliado" value={paciente.numeroAfiliado ?? "—"} />
                   <Item label="Sesiones autorizadas" value={paciente.sesionesAutorizadas?.toString() ?? "—"} />
+                  {paciente.sesionesAutorizadas != null && (() => {
+                    const realizadas = sesiones.filter((s) => s.tipo !== "nota").length;
+                    const restantes = paciente.sesionesAutorizadas! - realizadas;
+                    const pct = Math.min(100, Math.round((realizadas / paciente.sesionesAutorizadas!) * 100));
+                    const alerta = restantes <= 3;
+                    return (
+                      <div className="sm:col-span-2">
+                        <dt className="text-xs text-ink-500 mb-1">Sesiones restantes</dt>
+                        <div className="flex items-center gap-3">
+                          <div className="flex-1 h-2 bg-ink-100 rounded-full overflow-hidden">
+                            <div
+                              className={`h-full rounded-full transition-all ${alerta ? "bg-amber-400" : "bg-sage-400"}`}
+                              style={{ width: `${pct}%` }}
+                            />
+                          </div>
+                          <span className={`text-sm font-semibold tabular-nums ${alerta ? "text-amber-700" : "text-sage-700"}`}>
+                            {restantes > 0 ? `${restantes} restantes` : "sin sesiones restantes"}
+                          </span>
+                        </div>
+                        <p className="text-xs text-ink-400 mt-0.5">{realizadas} de {paciente.sesionesAutorizadas} sesiones realizadas</p>
+                      </div>
+                    );
+                  })()}
                 </>
               )}
               <Item label="Importe por sesión" value={formatMoney(paciente.importeSesion)} />
@@ -181,12 +314,10 @@ export default function PacienteTabs({ paciente }: { paciente: Paciente }) {
                 <p className="text-sm whitespace-pre-wrap">{paciente.diagnostico}</p>
               </div>
             )}
-            {paciente.objetivosTerapeuticos && (
-              <div className="mt-4">
-                <p className="text-xs font-medium text-brand-600 mb-1">Objetivos terapéuticos</p>
-                <p className="text-sm whitespace-pre-wrap">{paciente.objetivosTerapeuticos}</p>
-              </div>
-            )}
+            <ObjetivosChecklist
+              pacienteId={paciente.id}
+              initialText={paciente.objetivosTerapeuticos}
+            />
             {paciente.notasGenerales && (
               <div className="mt-4">
                 <p className="text-xs font-medium text-ink-500 mb-1">Notas generales</p>
@@ -256,6 +387,50 @@ export default function PacienteTabs({ paciente }: { paciente: Paciente }) {
         {/* ── Historia clínica ── */}
         {tab === "historia" && (
           <div className="space-y-4">
+            {/* Filtros */}
+            <div className="card p-3 space-y-2">
+              <div className="flex flex-wrap gap-2 items-center">
+                <div className="flex gap-1">
+                  {(["all", "sesion", "nota"] as const).map((t) => (
+                    <button
+                      key={t}
+                      onClick={() => setFiltroTipo(t)}
+                      className={`text-xs px-2.5 py-1 rounded-full border transition font-medium ${
+                        filtroTipo === t
+                          ? "bg-brand-600 text-white border-brand-600"
+                          : "bg-white text-ink-500 border-ink-200 hover:border-brand-400"
+                      }`}
+                    >
+                      {t === "all" ? "Todas" : t === "sesion" ? "Sesiones" : "Notas"}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex items-center gap-1.5 flex-1 min-w-[160px] border border-ink-200 rounded-lg px-2.5 h-8 bg-white">
+                  <Search className="w-3.5 h-3.5 text-ink-400 shrink-0" />
+                  <input
+                    type="text"
+                    className="text-sm flex-1 bg-transparent outline-none placeholder:text-ink-400"
+                    placeholder="Buscar en sesiones…"
+                    value={filtroBusqueda}
+                    onChange={(e) => setFiltroBusqueda(e.target.value)}
+                  />
+                </div>
+              </div>
+              <div className="flex gap-2 items-center flex-wrap">
+                <span className="text-[11px] text-ink-400 shrink-0">Período:</span>
+                <input type="date" className="input text-xs h-7 flex-1 min-w-[120px]" value={filtroDesde} onChange={(e) => setFiltroDesde(e.target.value)} />
+                <span className="text-[11px] text-ink-400">→</span>
+                <input type="date" className="input text-xs h-7 flex-1 min-w-[120px]" value={filtroHasta} onChange={(e) => setFiltroHasta(e.target.value)} />
+                {(filtroDesde || filtroHasta || filtroBusqueda || filtroTipo !== "all") && (
+                  <button
+                    onClick={() => { setFiltroDesde(""); setFiltroHasta(""); setFiltroBusqueda(""); setFiltroTipo("all"); }}
+                    className="text-[11px] text-ink-400 hover:text-ink-700 transition"
+                  >
+                    Limpiar
+                  </button>
+                )}
+              </div>
+            </div>
             <SessionForm
               pacienteId={paciente.id}
               turnos={paciente.turnos.map((t) => ({
@@ -267,7 +442,7 @@ export default function PacienteTabs({ paciente }: { paciente: Paciente }) {
               onSaved={handleSesionSaved}
             />
             <SessionList
-              sesiones={sesiones}
+              sesiones={sesionesFiltradas}
               onUpdated={handleSesionUpdated}
               onDeleted={handleSesionDeleted}
             />

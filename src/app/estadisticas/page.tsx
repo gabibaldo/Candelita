@@ -128,6 +128,29 @@ export default async function EstadisticasPage() {
 
   const mesesArr = Array.from(byMes.values()).reverse(); // más reciente primero
 
+  // ── Heatmap distribución por día/hora ──────────────────────────────────────
+  const HEATMAP_DAYS = [1, 2, 3, 4, 5, 6];
+  const HEATMAP_HOURS = [14, 15, 16, 17, 18, 19, 20];
+  const DAY_LABELS = ["", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+
+  const heatmap: Record<string, number> = {};
+  for (const t of turnosRango.filter((x) => x.estado === "realizado")) {
+    const arDate = new Date(t.inicio).toLocaleDateString("en-CA", {
+      timeZone: "America/Argentina/Buenos_Aires",
+    });
+    const dow = new Date(arDate + "T12:00:00-03:00").getDay();
+    const hourStr = new Date(t.inicio).toLocaleTimeString("en-CA", {
+      hour: "2-digit",
+      hour12: false,
+      timeZone: "America/Argentina/Buenos_Aires",
+    });
+    const hour = parseInt(hourStr.slice(0, 2), 10);
+    if (dow >= 1 && dow <= 6 && hour >= 14 && hour <= 20) {
+      heatmap[`${dow}-${hour}`] = (heatmap[`${dow}-${hour}`] || 0) + 1;
+    }
+  }
+  const maxHeat = Math.max(...Object.values(heatmap), 1);
+
   // ── Totales globales del rango ─────────────────────────────────────────────
   const totalRealizados   = turnosRango.filter((t) => t.estado === "realizado").length;
   const totalCancelados   = turnosRango.filter((t) => t.estado === "cancelado").length;
@@ -348,6 +371,50 @@ export default async function EstadisticasPage() {
           </div>
         </section>
       </div>
+      {/* Heatmap */}
+      {totalRealizados > 0 && (
+        <section className="space-y-3">
+          <h2 className="section-title">Distribución por día y horario</h2>
+          <div className="card p-5 overflow-x-auto">
+            <div className="min-w-[340px]">
+              <div className="grid gap-1 mb-1" style={{ gridTemplateColumns: "2.5rem repeat(6, 1fr)" }}>
+                <div />
+                {HEATMAP_DAYS.map((d) => (
+                  <div key={d} className="text-center text-[10px] font-semibold text-ink-400 uppercase">
+                    {DAY_LABELS[d]}
+                  </div>
+                ))}
+              </div>
+              {HEATMAP_HOURS.map((h) => (
+                <div key={h} className="grid gap-1 mb-1" style={{ gridTemplateColumns: "2.5rem repeat(6, 1fr)" }}>
+                  <div className="text-[10px] text-ink-400 flex items-center justify-end pr-2 tabular-nums">
+                    {h}hs
+                  </div>
+                  {HEATMAP_DAYS.map((d) => {
+                    const count = heatmap[`${d}-${h}`] || 0;
+                    const pct = count / maxHeat;
+                    return (
+                      <div
+                        key={d}
+                        className="h-8 rounded flex items-center justify-center text-[10px] font-semibold transition"
+                        title={`${count} sesión${count !== 1 ? "es" : ""}`}
+                        style={{
+                          backgroundColor: count === 0
+                            ? "#f3f4f6"
+                            : `rgba(100, 40, 140, ${0.12 + pct * 0.75})`,
+                          color: pct > 0.55 ? "white" : "#5b21b6",
+                        }}
+                      >
+                        {count > 0 ? count : ""}
+                      </div>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
     </div>
   );
 }

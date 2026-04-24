@@ -5,6 +5,7 @@ import { edadDesde } from "@/lib/utils";
 import { ChevronLeft } from "lucide-react";
 import DeletePatientButton from "@/components/DeletePatientButton";
 import PacienteTabs from "@/components/PacienteTabs";
+import ExportPDFButton from "@/components/ExportPDFButton";
 
 export const dynamic = "force-dynamic";
 
@@ -111,13 +112,7 @@ export default async function PacientePage({
           </div>
         </div>
         <div className="flex gap-2 flex-wrap">
-          <Link
-            href={`/api/historia/${paciente.id}/pdf`}
-            target="_blank"
-            className="btn-ghost"
-          >
-            Exportar PDF
-          </Link>
+          <ExportPDFButton pacienteId={paciente.id} />
           <Link
             href={`/pacientes/${paciente.id}/editar`}
             className="btn-ghost"

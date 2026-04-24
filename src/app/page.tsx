@@ -212,6 +212,7 @@ export default async function Dashboard() {
       <StaggerList className="grid grid-cols-2 lg:grid-cols-3 gap-3 items-stretch">
         <StaggerItem className="h-full">
           <KpiCard
+            primary
             icon={<CalendarDays className="w-4 h-4" />}
             label="Turnos hoy"
             value={turnosHoy.length.toString()}
@@ -231,6 +232,7 @@ export default async function Dashboard() {
         </StaggerItem>
         <StaggerItem className="h-full">
           <KpiCard
+            primary
             icon={<CircleDashed className="w-4 h-4" />}
             label="Pendiente de cobro"
             value={formatMoney(pendienteHoy)}
@@ -277,9 +279,14 @@ export default async function Dashboard() {
               title="Semana libre"
               description="No tenés turnos programados esta semana."
               action={
-                <Link href="/calendario" className="btn-ghost">
-                  Ir al calendario
-                </Link>
+                <div className="flex gap-2 justify-center flex-wrap">
+                  <Link href="/calendario?nuevo=1" className="btn-primary text-sm">
+                    + Nuevo turno
+                  </Link>
+                  <Link href="/calendario" className="btn-ghost text-sm">
+                    Ver calendario
+                  </Link>
+                </div>
               }
             />
           ) : (
@@ -410,6 +417,7 @@ function KpiCard({
   sub,
   tone = "default",
   href,
+  primary = false,
 }: {
   icon: React.ReactNode;
   label: string;
@@ -417,26 +425,30 @@ function KpiCard({
   sub?: string;
   tone?: "default" | "ok" | "warn";
   href?: string;
+  primary?: boolean;
 }) {
   const toneMap: Record<string, string> = {
     default: "bg-brand-50 text-brand-700",
     ok: "bg-sage-100 text-sage-700",
     warn: "bg-amber-100 text-amber-700",
   };
-  // Mobile: horizontal (icono izquierda + datos derecha)
-  // Desktop (lg): vertical clásico
+  const cardBase = primary
+    ? "card p-3 lg:p-5 h-full border-l-4 " +
+      (tone === "warn" ? "border-l-amber-400" : tone === "ok" ? "border-l-sage-400" : "border-l-brand-400")
+    : "card p-3 lg:p-4 h-full";
+
   const inner = (
     <>
       {/* Mobile: fila horizontal */}
       <div className="flex items-center gap-3 lg:hidden">
-        <div className={`shrink-0 inline-flex items-center justify-center w-9 h-9 rounded-xl ${toneMap[tone]}`}>
+        <div className={`shrink-0 inline-flex items-center justify-center ${primary ? "w-10 h-10 rounded-xl" : "w-9 h-9 rounded-xl"} ${toneMap[tone]}`}>
           {icon}
         </div>
         <div className="min-w-0">
           <p className="text-[10px] uppercase tracking-wider text-ink-500 font-medium leading-none mb-0.5">
             {label}
           </p>
-          <p className="text-lg font-semibold text-ink-800 tabular-nums leading-tight">
+          <p className={`${primary ? "text-xl" : "text-lg"} font-semibold text-ink-800 tabular-nums leading-tight`}>
             {value}
           </p>
           {sub && (
@@ -448,22 +460,22 @@ function KpiCard({
       </div>
       {/* Desktop: columna vertical */}
       <div className="hidden lg:block">
-        <div className={`inline-flex items-center justify-center w-8 h-8 rounded-lg ${toneMap[tone]}`}>
+        <div className={`inline-flex items-center justify-center ${primary ? "w-10 h-10 rounded-xl" : "w-8 h-8 rounded-lg"} ${toneMap[tone]}`}>
           {icon}
         </div>
         <p className="text-xs uppercase tracking-wider text-ink-500 mt-3">{label}</p>
-        <p className="text-2xl font-semibold text-ink-800 tabular-nums mt-0.5">{value}</p>
+        <p className={`${primary ? "text-3xl" : "text-2xl"} font-semibold text-ink-800 tabular-nums mt-0.5`}>{value}</p>
         {sub && <p className="text-xs text-ink-500 mt-1">{sub}</p>}
       </div>
     </>
   );
   if (href) {
     return (
-      <Link href={href} className="card p-3 lg:p-4 h-full block hover:shadow-pop transition">
+      <Link href={href} className={`${cardBase} block hover:shadow-pop transition`}>
         {inner}
       </Link>
     );
   }
-  return <div className="card p-3 lg:p-4 h-full">{inner}</div>;
+  return <div className={cardBase}>{inner}</div>;
 }
 

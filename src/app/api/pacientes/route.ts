@@ -64,10 +64,19 @@ export async function GET(req: NextRequest) {
   const all = await prisma.paciente.findMany({
     where,
     orderBy: [{ apellido: "asc" }, { nombre: "asc" }],
-    include: { _count: { select: { turnos: true, sesiones: true } } },
+    include: {
+      _count: { select: { turnos: true, sesiones: true } },
+      turnos: { orderBy: { inicio: "desc" }, take: 1, select: { inicio: true } },
+    },
   });
 
-  if (!q) return NextResponse.json(all);
+  const toJson = (list: typeof all) =>
+    list.map(({ turnos, ...p }) => ({
+      ...p,
+      ultimoTurno: turnos[0]?.inicio?.toISOString() ?? null,
+    }));
+
+  if (!q) return NextResponse.json(toJson(all));
 
   const qn = stripAccents(q);
   const filtered = all.filter(
@@ -77,7 +86,7 @@ export async function GET(req: NextRequest) {
       (p.tutorNombre && stripAccents(p.tutorNombre).includes(qn))
   );
 
-  return NextResponse.json(filtered);
+  return NextResponse.json(toJson(filtered));
 }
 
 export async function POST(req: NextRequest) {

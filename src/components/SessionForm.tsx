@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { ChevronDown, Check } from "lucide-react";
+import { ChevronDown, Check, Loader2 } from "lucide-react";
 
 type TurnoOpt = { id: number; inicio: string };
 
@@ -99,6 +99,13 @@ type NuevaSesion = {
   objetivos: string | null;
   proximosPasos: string | null;
 };
+
+const PLANTILLAS = [
+  { label: "DBT", text: "Habilidades trabajadas:\n• Mindfulness: \n• Reg. emocional: \n• Tolerancia al malestar: \n• Ef. interpersonal: " },
+  { label: "TCC", text: "Técnica aplicada:\n\nPensamientos automáticos trabajados:\n\nReestructuración cognitiva:\n\nTarea para el hogar:" },
+  { label: "1ª entrevista", text: "Motivo de consulta referido:\n\nHistoria del problema:\n\nImpresión diagnóstica preliminar:\n\nObjetivos iniciales:" },
+  { label: "Cierre", text: "Sesión de cierre.\n\nLogros del proceso:\n\nObjetivos alcanzados:\n\nRecomendaciones:" },
+];
 
 export default function SessionForm({
   pacienteId,
@@ -202,7 +209,20 @@ export default function SessionForm({
         </div>
       </div>
       <div>
-        <label className="label">Resumen de la sesión *</label>
+        <div className="flex items-center gap-1.5 flex-wrap mb-1.5">
+          <label className="label !mb-0">Resumen de la sesión *</label>
+          <span className="text-[10px] text-ink-400 ml-auto">Plantilla:</span>
+          {PLANTILLAS.map((p) => (
+            <button
+              type="button"
+              key={p.label}
+              onClick={() => setResumen(p.text)}
+              className="text-[11px] px-2 py-0.5 rounded-full border border-ink-200 text-ink-600 hover:border-brand-400 hover:text-brand-700 transition bg-white"
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
         <textarea
           className="textarea min-h-[140px]"
           value={resumen}
@@ -234,7 +254,8 @@ export default function SessionForm({
           {err}
         </p>
       )}
-      <button className="btn-primary" disabled={saving}>
+      <button className="btn-primary inline-flex items-center gap-2" disabled={saving}>
+        {saving && <Loader2 className="w-4 h-4 animate-spin" />}
         {saving ? "Guardando…" : "Guardar sesión"}
       </button>
     </form>

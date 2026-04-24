@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import ExportPDFButton from "@/components/ExportPDFButton";
 import { prisma } from "@/lib/db";
 import { edadDesde, formatDate, formatDateTime } from "@/lib/utils";
 import { ArrowLeft, CalendarDays, FileText, BookOpen } from "lucide-react";
@@ -82,13 +83,7 @@ export default async function HistoriaPage({
               </p>
             )}
           </div>
-          <Link
-            href={`/api/historia/${paciente.id}/pdf`}
-            target="_blank"
-            className="btn-ghost"
-          >
-            Exportar PDF
-          </Link>
+          <ExportPDFButton pacienteId={paciente.id} />
         </div>
 
         {/* Stats */}

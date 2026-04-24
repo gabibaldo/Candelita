@@ -29,6 +29,13 @@ type PacienteMini = {
   obraSocialNombre: string | null;
 };
 
+type BloqueoDia = {
+  id: number;
+  inicio: string;
+  fin: string;
+  motivo: string | null;
+};
+
 type TurnoView = {
   id: number;
   pacienteId: number;
@@ -56,6 +63,8 @@ function colorForPaciente(t: TurnoView) {
     return { bg: "#f3f4f6", text: "#6b7280" };
   if (t.modalidad === "virtual")
     return { bg: "#dbeafe", text: "#1e3a8a" };
+  if (t.paciente.tipo === "obra_social")
+    return { bg: "#ede9fe", text: "#5b21b6" };
   return { bg: "#d1fae5", text: "#065f46" };
 }
 
@@ -83,6 +92,11 @@ export default function Calendar({
   });
   const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
   const [rango, setRango] = useState<{ from: Date; to: Date } | null>(null);
+  const [bloqueos, setBloqueos] = useState<BloqueoDia[]>([]);
+  const [showBloqueoForm, setShowBloqueoForm] = useState(false);
+  const [bloqueoDate, setBloqueoDate] = useState(() => toARDate(new Date()));
+  const [bloqueoMotivo, setBloqueoMotivo] = useState("");
+  const [savingBloqueo, setSavingBloqueo] = useState(false);
   const [modal, setModal] = useState<
     | { kind: "create"; inicio: Date; fin: Date }
     | { kind: "edit"; turno: TurnoView }
@@ -95,6 +109,13 @@ export default function Calendar({
   } | null>(null);
   const calRef = useRef<FullCalendar>(null);
   const calWrapRef = useRef<HTMLDivElement>(null);
+
+  async function cargarBloqueos() {
+    const res = await fetch("/api/bloqueos");
+    if (res.ok) setBloqueos(await res.json());
+  }
+
+  useEffect(() => { cargarBloqueos(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function cargarTurnos(from: Date, to: Date) {
     const params = new URLSearchParams({
@@ -124,7 +145,7 @@ export default function Calendar({
 
   const events = useMemo(() => {
     const now = new Date();
-    return turnos.map((t) => {
+    const turnoEvents = turnos.map((t) => {
       const c = colorForPaciente(t);
       const isPast = new Date(t.fin) < now;
       const sinSesion = needsSesion(t);
@@ -150,7 +171,23 @@ export default function Calendar({
             : [],
       };
     });
-  }, [turnos]);
+
+    const bloqueoEvents = bloqueos.map((b) => {
+      const arDate = new Date(b.inicio).toLocaleDateString("en-CA", {
+        timeZone: "America/Argentina/Buenos_Aires",
+      });
+      return {
+        id: `bloqueo-${b.id}`,
+        title: b.motivo || "Día bloqueado",
+        start: `${arDate}T14:00:00-03:00`,
+        end: `${arDate}T21:00:00-03:00`,
+        display: "background" as const,
+        backgroundColor: "#ede9fe",
+      };
+    });
+
+    return [...turnoEvents, ...bloqueoEvents];
+  }, [turnos, bloqueos]);
 
   async function handleDrop(arg: EventDropArg | ResizeArg) {
     const id = Number(arg.event.id);
@@ -245,19 +282,38 @@ export default function Calendar({
           {hoverTooltip.time}
         </div>
       )}
-      <div className="card p-3 flex gap-2 items-center flex-wrap">
-        <label className="text-sm text-ink-600 shrink-0">Filtrar:</label>
-        <PatientCombobox
-          pacientes={initialPacientes}
-          value={filtroPaciente}
-          onChange={setFiltroPaciente}
-          placeholder="Todos los pacientes…"
-          className="flex-1 min-w-[220px] max-w-xs"
-        />
-        <div className="ml-auto flex items-center gap-3 text-xs text-ink-500">
+      <div className="card p-3 flex flex-col gap-2">
+        {/* Fila 1: filtro + bloquear */}
+        <div className="flex gap-2 items-center">
+          <label className="text-sm text-ink-600 shrink-0">Filtrar:</label>
+          <PatientCombobox
+            pacientes={initialPacientes}
+            value={filtroPaciente}
+            onChange={setFiltroPaciente}
+            placeholder="Todos los pacientes…"
+            className="flex-1 min-w-0"
+          />
+          <button
+            type="button"
+            onClick={() => setShowBloqueoForm((v) => !v)}
+            className={`shrink-0 flex items-center gap-1 px-2.5 py-1.5 rounded-lg border transition text-xs font-medium whitespace-nowrap ${
+              showBloqueoForm
+                ? "bg-violet-100 text-violet-700 border-violet-200"
+                : "bg-white text-ink-500 border-ink-200 hover:border-violet-300 hover:text-violet-600"
+            }`}
+          >
+            🚫 Bloquear día
+          </button>
+        </div>
+        {/* Fila 2: leyenda */}
+        <div className="flex items-center gap-3 text-xs text-ink-500 flex-wrap">
           <span className="inline-flex items-center gap-1">
             <span className="w-3 h-3 rounded bg-emerald-200 inline-block" />
-            Presencial
+            Particular
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <span className="w-3 h-3 rounded bg-violet-200 inline-block" />
+            Obra social
           </span>
           <span className="inline-flex items-center gap-1">
             <span className="w-3 h-3 rounded bg-blue-200 inline-block" />
@@ -265,10 +321,105 @@ export default function Calendar({
           </span>
           <span className="inline-flex items-center gap-1">
             <span className="w-3 h-3 rounded bg-gray-200 inline-block" />
-            Cancelado / Ausente
+            Cancelado
           </span>
         </div>
       </div>
+
+      {showBloqueoForm && (
+        <div className="card p-3 flex flex-wrap gap-3 items-end border-violet-200 bg-violet-50/50">
+          <div>
+            <label className="label !text-xs !mb-1">Fecha</label>
+            <input
+              type="date"
+              className="input text-sm"
+              value={bloqueoDate}
+              onChange={(e) => setBloqueoDate(e.target.value)}
+            />
+          </div>
+          <div className="flex-1 min-w-[160px]">
+            <label className="label !text-xs !mb-1">Motivo (opcional)</label>
+            <input
+              type="text"
+              className="input text-sm"
+              placeholder="Vacaciones, feriado, supervisión…"
+              value={bloqueoMotivo}
+              onChange={(e) => setBloqueoMotivo(e.target.value)}
+            />
+          </div>
+          <button
+            disabled={!bloqueoDate || savingBloqueo}
+            onClick={async () => {
+              setSavingBloqueo(true);
+              const inicio = new Date(bloqueoDate + "T00:00:00-03:00");
+              const fin = new Date(bloqueoDate + "T23:59:59-03:00");
+              const res = await fetch("/api/bloqueos", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  inicio: inicio.toISOString(),
+                  fin: fin.toISOString(),
+                  motivo: bloqueoMotivo || null,
+                }),
+              });
+              if (res.ok) {
+                await cargarBloqueos();
+                setShowBloqueoForm(false);
+                setBloqueoMotivo("");
+              }
+              setSavingBloqueo(false);
+            }}
+            className="btn-primary text-sm"
+          >
+            {savingBloqueo ? "Guardando…" : "Bloquear"}
+          </button>
+          <button
+            onClick={() => setShowBloqueoForm(false)}
+            className="btn-ghost text-sm"
+          >
+            Cancelar
+          </button>
+        </div>
+      )}
+
+      {bloqueos.length > 0 && (
+        <div className="card p-3">
+          <p className="text-[11px] font-semibold text-ink-400 uppercase tracking-wider mb-2">
+            Días bloqueados
+          </p>
+          <ul className="flex flex-wrap gap-2">
+            {bloqueos.map((b) => {
+              const label = new Date(b.inicio).toLocaleDateString("es-AR", {
+                weekday: "short",
+                day: "2-digit",
+                month: "2-digit",
+                timeZone: "America/Argentina/Buenos_Aires",
+              });
+              return (
+                <li
+                  key={b.id}
+                  className="flex items-center gap-1.5 bg-violet-50 text-violet-700 text-xs px-2.5 py-1 rounded-full border border-violet-200"
+                >
+                  <span>
+                    🚫 {label}
+                    {b.motivo ? ` · ${b.motivo}` : ""}
+                  </span>
+                  <button
+                    onClick={async () => {
+                      await fetch(`/api/bloqueos/${b.id}`, { method: "DELETE" });
+                      cargarBloqueos();
+                    }}
+                    className="ml-0.5 hover:text-red-500 transition leading-none"
+                    title="Eliminar bloqueo"
+                  >
+                    ✕
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
 
       <div
         ref={calWrapRef}
@@ -407,12 +558,12 @@ function TurnoModal({
   const [inicioTime, setInicioTime] = useState(() =>
     toARTime(isEdit ? new Date(data.turno.inicio) : data.inicio)
   );
-  const [finDate, setFinDate] = useState(() =>
-    toARDate(isEdit ? new Date(data.turno.fin) : data.fin)
-  );
-  const [finTime, setFinTime] = useState(() =>
-    toARTime(isEdit ? new Date(data.turno.fin) : data.fin)
-  );
+  const [duracion, setDuracion] = useState<number | null>(() => {
+    const ini = isEdit ? new Date(data.turno.inicio) : data.inicio;
+    const fin = isEdit ? new Date(data.turno.fin) : data.fin;
+    const mins = Math.max(15, Math.round((fin.getTime() - ini.getTime()) / 60_000));
+    return [30, 45, 60, 75, 90].includes(mins) ? mins : mins;
+  });
   const [estado, setEstado] = useState<string>(
     isEdit ? data.turno.estado : "programado"
   );
@@ -484,10 +635,11 @@ function TurnoModal({
     setSaving(true);
     setErr(null);
     try {
+      const inicioISO = new Date(`${inicioDate}T${inicioTime}:00-03:00`);
       const payload: any = {
         pacienteId: Number(pacienteId),
-        inicio: new Date(`${inicioDate}T${inicioTime}:00-03:00`).toISOString(),
-        fin: new Date(`${finDate}T${finTime}:00-03:00`).toISOString(),
+        inicio: inicioISO.toISOString(),
+        fin: new Date(inicioISO.getTime() + (duracion ?? 45) * 60_000).toISOString(),
         estado,
         modalidad,
         importe: importe === "" ? null : Number(importe),
@@ -677,49 +829,67 @@ function TurnoModal({
         </div>
 
         <div className={`grid grid-cols-1 sm:grid-cols-2 gap-3 ${isPastTurno ? "opacity-60 pointer-events-none" : ""}`}>
-            <div>
-              <label className="label">Inicio</label>
-              <div className="flex flex-col gap-1.5">
-                <input
-                  type="date"
-                  className="input"
-                  value={inicioDate}
-                  min={isEdit ? undefined : toARDate(new Date())}
-                  onChange={(e) => setInicioDate(e.target.value)}
-                  disabled={isPastTurno}
-                  required
-                />
-                <select
-                  className="input text-sm"
-                  value={inicioTime}
-                  onChange={(e) => setInicioTime(e.target.value)}
-                  disabled={isPastTurno}
-                >
-                  {TIME_OPTIONS.map((t) => <option key={t} value={t}>{t} hs</option>)}
-                </select>
-              </div>
+          <div>
+            <label className="label">Inicio</label>
+            <div className="flex flex-col gap-1.5">
+              <input
+                type="date"
+                className="input"
+                value={inicioDate}
+                min={isEdit ? undefined : toARDate(new Date())}
+                onChange={(e) => setInicioDate(e.target.value)}
+                disabled={isPastTurno}
+                required
+              />
+              <select
+                className="input text-sm"
+                value={inicioTime}
+                onChange={(e) => setInicioTime(e.target.value)}
+                disabled={isPastTurno}
+              >
+                {TIME_OPTIONS.map((t) => <option key={t} value={t}>{t} hs</option>)}
+              </select>
             </div>
-            <div>
-              <label className="label">Fin</label>
-              <div className="flex flex-col gap-1.5">
-                <input
-                  type="date"
-                  className="input"
-                  value={finDate}
-                  onChange={(e) => setFinDate(e.target.value)}
+          </div>
+          <div>
+            <label className="label">Duración</label>
+            <div className="flex gap-1.5 flex-wrap pt-0.5">
+              {[30, 45, 60, 75, 90].map((d) => (
+                <button
+                  key={d}
+                  type="button"
                   disabled={isPastTurno}
-                  required
-                />
-                <select
-                  className="input text-sm"
-                  value={finTime}
-                  onChange={(e) => setFinTime(e.target.value)}
-                  disabled={isPastTurno}
+                  onClick={() => setDuracion(duracion === d ? null : d)}
+                  className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition border ${
+                    duracion === d
+                      ? "bg-brand-600 text-white border-brand-600"
+                      : "bg-white text-ink-600 border-ink-200 hover:border-brand-400"
+                  }`}
                 >
-                  {TIME_OPTIONS.map((t) => <option key={t} value={t}>{t} hs</option>)}
-                </select>
-              </div>
+                  {d} min
+                </button>
+              ))}
+              {duracion === null || ![30, 45, 60, 75, 90].includes(duracion) ? (
+                <div className="flex items-center gap-1">
+                  <input
+                    type="number"
+                    min={15}
+                    max={240}
+                    placeholder="min"
+                    value={duracion === null || [30, 45, 60, 75, 90].includes(duracion ?? 0) ? "" : duracion}
+                    onChange={(e) => {
+                      const v = parseInt(e.target.value);
+                      if (!isNaN(v) && v >= 15) setDuracion(v);
+                      else if (e.target.value === "") setDuracion(null);
+                    }}
+                    className="input w-16 text-xs h-8 text-center"
+                    disabled={isPastTurno}
+                  />
+                  <span className="text-xs text-ink-400">min</span>
+                </div>
+              ) : null}
             </div>
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
@@ -780,6 +950,15 @@ function TurnoModal({
           </label>
         </div>
 
+        {isEdit && estado === "realizado" && !data.turno.sesion && (
+          <SesionRapida
+            turnoId={data.turno.id}
+            pacienteId={data.turno.pacienteId}
+            inicioISO={data.turno.inicio}
+            onGuardada={onClose}
+          />
+        )}
+
         {!isEdit && (
           <div className="flex items-center gap-3 flex-wrap">
             <label className="flex items-center gap-2 text-sm">
@@ -808,9 +987,18 @@ function TurnoModal({
         )}
 
         <div>
-          <label className="label">Notas</label>
+          <label className="label">
+            {estado === "cancelado" || estado === "ausente"
+              ? "Motivo de cancelación / ausencia"
+              : "Notas"}
+          </label>
           <textarea
             className="textarea"
+            placeholder={
+              estado === "cancelado" || estado === "ausente"
+                ? "¿Por qué se canceló o ausentó?"
+                : ""
+            }
             value={notas}
             onChange={(e) => setNotas(e.target.value)}
           />
@@ -852,6 +1040,63 @@ function TurnoModal({
               {saving ? "Guardando…" : "Guardar"}
             </button>
           </div>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+function SesionRapida({
+  turnoId,
+  pacienteId,
+  inicioISO,
+  onGuardada,
+}: {
+  turnoId: number;
+  pacienteId: number;
+  inicioISO: string;
+  onGuardada: () => void;
+}) {
+  const [resumen, setResumen] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  async function guardar(e: React.FormEvent) {
+    e.preventDefault();
+    if (!resumen.trim()) { setErr("El resumen es obligatorio."); return; }
+    setSaving(true);
+    setErr(null);
+    try {
+      const res = await fetch("/api/sesiones", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pacienteId, turnoId, fecha: inicioISO, resumen }),
+      });
+      if (!res.ok) throw new Error("No pude guardar la sesión");
+      onGuardada();
+    } catch (e: any) {
+      setErr(e.message);
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="border border-brand-200 bg-brand-50/40 rounded-xl p-3 space-y-2">
+      <p className="text-xs font-semibold text-brand-700">Cargar nota de sesión</p>
+      <form onSubmit={guardar} className="space-y-2">
+        <textarea
+          className="textarea text-sm min-h-[72px]"
+          placeholder="Resumen de la sesión…"
+          value={resumen}
+          onChange={(e) => setResumen(e.target.value)}
+          required
+        />
+        {err && <p className="text-xs text-red-600">{err}</p>}
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-xs text-ink-400">Podés ampliar desde la ficha del paciente</p>
+          <button className="btn-primary text-xs py-1.5 px-3 shrink-0" disabled={saving}>
+            {saving ? "Guardando…" : "Guardar sesión"}
+          </button>
         </div>
       </form>
     </div>

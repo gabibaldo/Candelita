@@ -134,3 +134,13 @@ model Sesion {
 
   @@index([pacienteId, fecha])
 }
+
+model BloqueoDia {
+  id        Int      @id @default(autoincrement())
+  inicio    DateTime
+  fin       DateTime
+  motivo    String?
+  createdAt DateTime @default(now())
+
+  @@index([inicio])
+}

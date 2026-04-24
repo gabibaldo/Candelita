@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Loader2 } from "lucide-react";
 
 export type PatientFormData = {
   id?: number;
@@ -378,7 +379,8 @@ export default function PatientForm({ initial }: { initial?: PatientFormData }) 
       )}
 
       <div className="flex gap-3">
-        <button className="btn-primary" disabled={saving}>
+        <button className="btn-primary inline-flex items-center gap-2" disabled={saving}>
+          {saving && <Loader2 className="w-4 h-4 animate-spin" />}
           {saving ? "Guardando…" : "Guardar"}
         </button>
         <button
