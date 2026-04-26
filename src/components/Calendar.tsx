@@ -453,13 +453,13 @@ export default function Calendar({
           firstDay={1}
           allDaySlot={false}
           hiddenDays={[0]}
-          slotMinTime="14:00:00"
+          slotMinTime="13:00:00"
           slotMaxTime="21:00:00"
-          slotDuration="00:30:00"
-          snapDuration="00:15:00"
+          slotDuration="00:10:00"
+          snapDuration="00:10:00"
           businessHours={{
             daysOfWeek: [1, 2, 3, 4, 5, 6],
-            startTime: "14:00",
+            startTime: "13:00",
             endTime: "21:00",
           }}
           selectConstraint="businessHours"
@@ -609,6 +609,7 @@ function TurnoModal({
   const [npImporte, setNpImporte] = useState("");
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [notasOpen, setNotasOpen] = useState(!!notas);
 
   async function crearPacienteRapido() {
     if (!npApellido || !npNombre) return;
@@ -710,354 +711,283 @@ function TurnoModal({
     }
   }
 
+  const estadoConfig: Record<string, { label: string; cls: string }> = {
+    programado: { label: "Programado", cls: "bg-violet-100 text-violet-700" },
+    realizado:  { label: "Realizado",  cls: "bg-emerald-100 text-emerald-700" },
+    cancelado:  { label: "Cancelado",  cls: "bg-gray-200 text-gray-600" },
+    ausente:    { label: "Ausente",    cls: "bg-amber-100 text-amber-700" },
+  };
+  const notasRequired = estado === "cancelado" || estado === "ausente";
+  const showNotas = notasOpen || notasRequired;
+
   return (
     <div
-      className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center"
       onClick={onClose}
     >
       <form
         onClick={(e) => e.stopPropagation()}
         onSubmit={save}
-        className="bg-white rounded-xl shadow-lg w-full max-w-lg p-6 space-y-4 max-h-[90dvh] overflow-y-auto"
+        className="bg-white w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl shadow-2xl flex flex-col max-h-[94dvh]"
       >
-        <div className="flex items-center justify-between">
-          <h3 className="font-semibold text-brand-800">
-            {isEdit ? "Editar turno" : "Nuevo turno"}
-          </h3>
-          <div className="flex items-center gap-3">
-            {isEdit && (
-              <Link
-                href={`/api/turnos/${data.turno.id}/recibo`}
-                target="_blank"
-                className="text-xs text-brand-700 hover:underline flex items-center gap-1"
-              >
-                Generar recibo ↗
-              </Link>
-            )}
-            {isEdit && (
-              <Link
-                href={`/pacientes/${data.turno.pacienteId}`}
-                className="text-xs text-brand-700 hover:underline"
-              >
-                Ver paciente →
-              </Link>
-            )}
-          </div>
-        </div>
-
-        <div>
-          <div className="flex items-center justify-between mb-1">
-            <label className="label !mb-0">Paciente *</label>
-            {!isEdit && !creandoPaciente && (
-              <button
-                type="button"
-                className="text-xs text-brand-700 hover:underline"
-                onClick={() => setCreandoPaciente(true)}
-              >
-                + Nuevo paciente
-              </button>
-            )}
-          </div>
-          {isPastTurno && (
-            <p className="text-xs text-ink-500 bg-ink-50 rounded-lg px-3 py-1.5">
-              Turno pasado — podés editar estado, importe y cobro
-            </p>
-          )}
-          {creandoPaciente ? (
-            <div className="border border-brand-200 bg-brand-50 rounded-lg p-3 space-y-2">
-              <p className="text-xs font-semibold text-brand-700">Nuevo paciente rápido</p>
-              <div className="grid grid-cols-2 gap-2">
-                <input
-                  className="input text-sm"
-                  placeholder="Apellido *"
-                  value={npApellido}
-                  onChange={(e) => setNpApellido(e.target.value)}
-                />
-                <input
-                  className="input text-sm"
-                  placeholder="Nombre *"
-                  value={npNombre}
-                  onChange={(e) => setNpNombre(e.target.value)}
-                />
-                <select
-                  className="input text-sm"
-                  value={npTipo}
-                  onChange={(e) => setNpTipo(e.target.value as "particular" | "obra_social")}
-                >
-                  <option value="particular">Particular</option>
-                  <option value="obra_social">Obra social</option>
-                </select>
-                <input
-                  className="input text-sm"
-                  type="number"
-                  placeholder="Importe sesión"
-                  value={npImporte}
-                  onChange={(e) => setNpImporte(e.target.value)}
-                />
-              </div>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  className="btn-primary text-sm py-1"
-                  onClick={crearPacienteRapido}
-                  disabled={!npApellido || !npNombre || saving}
-                >
-                  Crear y seleccionar
-                </button>
-                <button
-                  type="button"
-                  className="btn-ghost text-sm py-1"
-                  onClick={() => setCreandoPaciente(false)}
-                >
-                  Cancelar
-                </button>
-              </div>
-            </div>
-          ) : (
-            <>
-              <select
-                className={"input " + (isPastTurno ? "opacity-60 cursor-not-allowed" : "")}
-                value={pacienteId}
-                onChange={(e) =>
-                  setPacienteId(e.target.value ? Number(e.target.value) : "")
-                }
-                disabled={isPastTurno}
-                required
-              >
-                <option value="">— Elegir —</option>
-                {pacientes.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.apellido}, {p.nombre}
-                  </option>
-                ))}
-              </select>
-              {selectedPaciente && (
-                <span
-                  className={
-                    "chip mt-1.5 inline-flex " +
-                    (selectedPaciente.tipo === "obra_social"
-                      ? "bg-blue-100 text-blue-800"
-                      : "bg-emerald-100 text-emerald-800")
-                  }
-                >
-                  {selectedPaciente.tipo === "obra_social"
-                    ? `Obra Social${selectedPaciente.obraSocialNombre ? ` · ${selectedPaciente.obraSocialNombre}` : ""}`
-                    : "Particular"}
-                </span>
-              )}
-            </>
-          )}
-        </div>
-
-        <div className={`grid grid-cols-1 sm:grid-cols-2 gap-3 ${isPastTurno ? "opacity-60 pointer-events-none" : ""}`}>
+        {/* Header sticky */}
+        <div className="flex items-start justify-between px-5 pt-5 pb-4 border-b border-ink-100 shrink-0">
           <div>
-            <label className="label">Inicio</label>
-            <div className="flex flex-col gap-1.5">
-              <input
-                type="date"
-                className="input"
-                value={inicioDate}
+            <h3 className="font-semibold text-ink-900 text-base">
+              {isEdit ? "Editar turno" : "Nuevo turno"}
+            </h3>
+            {isEdit && (
+              <div className="flex gap-3 mt-1">
+                <Link href={`/api/turnos/${data.turno.id}/recibo`} target="_blank"
+                  className="text-xs text-brand-600 hover:underline">Recibo ↗</Link>
+                <Link href={`/pacientes/${data.turno.pacienteId}`}
+                  className="text-xs text-brand-600 hover:underline">Ver paciente →</Link>
+              </div>
+            )}
+          </div>
+          <button type="button" onClick={onClose}
+            className="w-8 h-8 flex items-center justify-center rounded-full text-ink-400 hover:bg-ink-100 transition text-xl leading-none mt-0.5">
+            ×
+          </button>
+        </div>
+
+        {/* Body scrollable */}
+        <div className="overflow-y-auto p-5 space-y-5 flex-1">
+
+          {/* Paciente */}
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-xs font-semibold text-ink-500 uppercase tracking-wide">Paciente</label>
+              {!isEdit && !creandoPaciente && (
+                <button type="button" className="text-xs text-brand-600 hover:underline"
+                  onClick={() => setCreandoPaciente(true)}>
+                  + Nuevo
+                </button>
+              )}
+            </div>
+            {isPastTurno && (
+              <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-1.5 mb-2">
+                Turno pasado — solo podés editar estado, importe y cobro
+              </p>
+            )}
+            {creandoPaciente ? (
+              <div className="border border-brand-200 bg-brand-50 rounded-xl p-3 space-y-2">
+                <p className="text-xs font-semibold text-brand-700">Nuevo paciente rápido</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <input className="input text-sm" placeholder="Apellido *"
+                    value={npApellido} onChange={(e) => setNpApellido(e.target.value)} />
+                  <input className="input text-sm" placeholder="Nombre *"
+                    value={npNombre} onChange={(e) => setNpNombre(e.target.value)} />
+                  <select className="input text-sm" value={npTipo}
+                    onChange={(e) => setNpTipo(e.target.value as "particular" | "obra_social")}>
+                    <option value="particular">Particular</option>
+                    <option value="obra_social">Obra social</option>
+                  </select>
+                  <input className="input text-sm" type="number" placeholder="Importe sesión"
+                    value={npImporte} onChange={(e) => setNpImporte(e.target.value)} />
+                </div>
+                <div className="flex gap-2">
+                  <button type="button" className="btn-primary text-sm py-1"
+                    onClick={crearPacienteRapido} disabled={!npApellido || !npNombre || saving}>
+                    Crear y seleccionar
+                  </button>
+                  <button type="button" className="btn-ghost text-sm py-1"
+                    onClick={() => setCreandoPaciente(false)}>Cancelar</button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <select
+                  className={"input " + (isPastTurno ? "opacity-60 cursor-not-allowed" : "")}
+                  value={pacienteId}
+                  onChange={(e) => setPacienteId(e.target.value ? Number(e.target.value) : "")}
+                  disabled={isPastTurno} required>
+                  <option value="">— Elegir paciente —</option>
+                  {pacientes.map((p) => (
+                    <option key={p.id} value={p.id}>{p.apellido}, {p.nombre}</option>
+                  ))}
+                </select>
+                {selectedPaciente && (
+                  <span className={"chip mt-1.5 inline-flex " +
+                    (selectedPaciente.tipo === "obra_social" ? "bg-blue-100 text-blue-800" : "bg-emerald-100 text-emerald-800")}>
+                    {selectedPaciente.tipo === "obra_social"
+                      ? `Obra Social${selectedPaciente.obraSocialNombre ? ` · ${selectedPaciente.obraSocialNombre}` : ""}`
+                      : "Particular"}
+                  </span>
+                )}
+              </>
+            )}
+          </div>
+
+          {/* Fecha + Hora + Duración */}
+          <div className={isPastTurno ? "opacity-60 pointer-events-none" : ""}>
+            <label className="text-xs font-semibold text-ink-500 uppercase tracking-wide block mb-1.5">Cuándo</label>
+            <div className="space-y-2">
+              <input type="date" className="input" value={inicioDate}
                 min={isEdit ? undefined : toARDate(new Date())}
                 onChange={(e) => setInicioDate(e.target.value)}
-                disabled={isPastTurno}
-                required
-              />
-              <select
-                className="input text-sm"
-                value={inicioTime}
-                onChange={(e) => setInicioTime(e.target.value)}
-                disabled={isPastTurno}
-              >
-                {TIME_OPTIONS.map((t) => <option key={t} value={t}>{t} hs</option>)}
-              </select>
+                disabled={isPastTurno} required />
+              <TimePickerInline value={inicioTime} onChange={setInicioTime} disabled={isPastTurno} />
             </div>
-          </div>
-          <div>
-            <label className="label">Duración</label>
-            <div className="flex gap-1.5 flex-wrap pt-0.5">
-              {[30, 45, 60, 75, 90].map((d) => (
-                <button
-                  key={d}
-                  type="button"
-                  disabled={isPastTurno}
-                  onClick={() => setDuracion(duracion === d ? null : d)}
-                  className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition border ${
-                    duracion === d
-                      ? "bg-brand-600 text-white border-brand-600"
-                      : "bg-white text-ink-600 border-ink-200 hover:border-brand-400"
-                  }`}
-                >
-                  {d} min
-                </button>
-              ))}
-              {duracion === null || ![30, 45, 60, 75, 90].includes(duracion) ? (
+            {/* Duración */}
+            <div className="mt-3">
+              <div className="flex rounded-xl overflow-hidden border border-ink-200 divide-x divide-ink-200">
+                {[30, 45, 60, 75, 90].map((d) => (
+                  <button key={d} type="button" onClick={() => setDuracion(d)}
+                    className={`flex-1 py-2 text-xs font-semibold transition ${
+                      duracion === d ? "bg-brand-600 text-white" : "bg-white text-ink-500 hover:bg-brand-50 hover:text-brand-700"
+                    }`}>
+                    {d}
+                  </button>
+                ))}
+              </div>
+              <div className="flex items-center justify-between mt-1.5 px-0.5">
+                {duracion ? (
+                  <p className="text-xs text-ink-400 font-mono">
+                    {duracion} min · termina{" "}
+                    {(() => {
+                      const [hStr, mStr] = inicioTime.split(":");
+                      const totalMin = parseInt(hStr) * 60 + parseInt(mStr) + duracion;
+                      return `${String(Math.floor(totalMin / 60)).padStart(2, "0")}:${String(totalMin % 60).padStart(2, "0")} hs`;
+                    })()}
+                  </p>
+                ) : <span />}
                 <div className="flex items-center gap-1">
-                  <input
-                    type="number"
-                    min={15}
-                    max={240}
-                    placeholder="min"
-                    value={duracion === null || [30, 45, 60, 75, 90].includes(duracion ?? 0) ? "" : duracion}
+                  <input type="number" min={15} max={240} placeholder="otro"
+                    value={duracion !== null && ![30, 45, 60, 75, 90].includes(duracion) ? duracion : ""}
                     onChange={(e) => {
                       const v = parseInt(e.target.value);
                       if (!isNaN(v) && v >= 15) setDuracion(v);
-                      else if (e.target.value === "") setDuracion(null);
+                      else if (e.target.value === "") setDuracion(45);
                     }}
-                    className="input w-16 text-xs h-8 text-center"
-                    disabled={isPastTurno}
-                  />
+                    className="w-14 text-center text-xs rounded-lg border border-ink-200 bg-white px-2 py-1 focus:outline-none focus:ring-2 focus:ring-brand-400" />
                   <span className="text-xs text-ink-400">min</span>
                 </div>
-              ) : null}
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="grid grid-cols-2 gap-3">
+          {/* Estado */}
           <div>
-            <label className="label">Estado</label>
-            <select
-              className="input"
-              value={estado}
-              onChange={(e) => setEstado(e.target.value)}
-            >
-              <option value="programado">Programado</option>
-              <option value="realizado">Realizado</option>
-              <option value="cancelado">Cancelado</option>
-              <option value="ausente">Ausente</option>
-            </select>
+            <label className="text-xs font-semibold text-ink-500 uppercase tracking-wide block mb-1.5">Estado</label>
+            <div className="flex gap-1.5">
+              {(["programado", "realizado", "cancelado", "ausente"] as const).map((e) => (
+                <button key={e} type="button" onClick={() => setEstado(e)}
+                  className={`flex-1 py-2 rounded-xl text-xs font-semibold transition ${
+                    estado === e ? estadoConfig[e].cls : "bg-ink-50 text-ink-400 hover:bg-ink-100"
+                  }`}>
+                  {estadoConfig[e].label}
+                </button>
+              ))}
+            </div>
           </div>
+
+          {/* Modalidad + Importe + Cobrado + Confirmado */}
+          <div className="space-y-3">
+            <div className="flex rounded-xl overflow-hidden border border-ink-200 divide-x divide-ink-200">
+              {[
+                { val: "presencial", label: "Presencial" },
+                { val: "virtual", label: "Virtual" },
+              ].map(({ val, label }) => (
+                <button key={val} type="button" onClick={() => setModalidad(val)}
+                  className={`flex-1 py-2.5 text-sm font-medium transition ${
+                    modalidad === val
+                      ? val === "virtual" ? "bg-blue-600 text-white" : "bg-brand-600 text-white"
+                      : "bg-white text-ink-500 hover:bg-ink-50"
+                  }`}>
+                  {label}
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-2 items-center">
+              <div className="relative flex-1">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-ink-400 pointer-events-none">$</span>
+                <input type="number" min={0} step={500} className="input pl-7"
+                  value={importe} onChange={(e) => setImporte(e.target.value)}
+                  placeholder="Importe" />
+              </div>
+              <button type="button" onClick={() => setConfirmado(!confirmado)}
+                className={`shrink-0 px-3 py-2.5 rounded-xl text-xs font-semibold border transition ${
+                  confirmado ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-white text-ink-400 border-ink-200 hover:border-ink-300"
+                }`}>
+                ✓ Confirmado
+              </button>
+              <button type="button" onClick={() => setCobrado(!cobrado)}
+                className={`shrink-0 px-3 py-2.5 rounded-xl text-xs font-semibold border transition ${
+                  cobrado ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-white text-ink-400 border-ink-200 hover:border-ink-300"
+                }`}>
+                $ Cobrado
+              </button>
+            </div>
+          </div>
+
+          {/* Sesión rápida */}
+          {isEdit && estado === "realizado" && !data.turno.sesion && (
+            <SesionRapida turnoId={data.turno.id} pacienteId={data.turno.pacienteId}
+              inicioISO={data.turno.inicio} onGuardada={onClose} />
+          )}
+
+          {/* Repetir (solo crear) */}
+          {!isEdit && (
+            <div className="flex items-center gap-3 flex-wrap">
+              <label className="flex items-center gap-2 text-sm text-ink-600 cursor-pointer">
+                <input type="checkbox" checked={repetir} onChange={(e) => setRepetir(e.target.checked)} />
+                Repetir semanalmente
+              </label>
+              {repetir && (
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="text-ink-400">por</span>
+                  <input type="number" min={1} max={52}
+                    className="input w-16 text-center py-1.5 text-sm" value={semanas}
+                    onChange={(e) => setSemanas(Number(e.target.value))} />
+                  <span className="text-ink-400">semanas más</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Notas accordion */}
           <div>
-            <label className="label">Modalidad</label>
-            <select
-              className="input"
-              value={modalidad}
-              onChange={(e) => setModalidad(e.target.value)}
-            >
-              <option value="presencial">🏥 Presencial</option>
-              <option value="virtual">🖥 Virtual</option>
-            </select>
-          </div>
-          <div>
-            <label className="label">Importe (ARS)</label>
-            <input
-              type="number"
-              min={0}
-              step={500}
-              className="input"
-              value={importe}
-              onChange={(e) => setImporte(e.target.value)}
-              placeholder="según paciente"
-            />
-          </div>
-        </div>
-
-        <div className="flex flex-wrap gap-4">
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={confirmado}
-              onChange={(e) => setConfirmado(e.target.checked)}
-            />
-            Confirmado
-          </label>
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={cobrado}
-              onChange={(e) => setCobrado(e.target.checked)}
-            />
-            Cobrado
-          </label>
-        </div>
-
-        {isEdit && estado === "realizado" && !data.turno.sesion && (
-          <SesionRapida
-            turnoId={data.turno.id}
-            pacienteId={data.turno.pacienteId}
-            inicioISO={data.turno.inicio}
-            onGuardada={onClose}
-          />
-        )}
-
-        {!isEdit && (
-          <div className="flex items-center gap-3 flex-wrap">
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={repetir}
-                onChange={(e) => setRepetir(e.target.checked)}
-              />
-              Repetir semanalmente
-            </label>
-            {repetir && (
-              <div className="flex items-center gap-2 text-sm">
-                <span className="text-ink-500">por</span>
-                <input
-                  type="number"
-                  min={1}
-                  max={52}
-                  className="input w-16 text-center"
-                  value={semanas}
-                  onChange={(e) => setSemanas(Number(e.target.value))}
-                />
-                <span className="text-ink-500">semanas más</span>
+            {!showNotas ? (
+              <button type="button" onClick={() => setNotasOpen(true)}
+                className="text-xs text-ink-400 hover:text-ink-600 transition flex items-center gap-1">
+                <span>+</span> Agregar nota
+              </button>
+            ) : (
+              <div>
+                <label className="text-xs font-semibold text-ink-500 uppercase tracking-wide block mb-1.5">
+                  {notasRequired ? "Motivo" : "Notas"}
+                </label>
+                <textarea className="textarea text-sm min-h-[72px]"
+                  placeholder={notasRequired ? "¿Por qué se canceló o ausentó?" : "Notas del turno…"}
+                  value={notas} onChange={(e) => setNotas(e.target.value)} />
               </div>
             )}
           </div>
-        )}
 
-        <div>
-          <label className="label">
-            {estado === "cancelado" || estado === "ausente"
-              ? "Motivo de cancelación / ausencia"
-              : "Notas"}
-          </label>
-          <textarea
-            className="textarea"
-            placeholder={
-              estado === "cancelado" || estado === "ausente"
-                ? "¿Por qué se canceló o ausentó?"
-                : ""
-            }
-            value={notas}
-            onChange={(e) => setNotas(e.target.value)}
-          />
+          {err && (
+            <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-3 py-2">
+              {err}
+            </p>
+          )}
         </div>
 
-        {err && (
-          <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded p-2">
-            {err}
-          </p>
-        )}
-
-        <div className="flex justify-between">
+        {/* Footer sticky */}
+        <div className="shrink-0 flex items-center justify-between px-5 py-4 border-t border-ink-100 bg-white rounded-b-2xl">
           <div>
             {isEdit && (
-              <button
-                type="button"
-                onClick={remove}
-                disabled={saving || isPastTurno}
+              <button type="button" onClick={remove} disabled={saving || isPastTurno}
                 title={isPastTurno ? "No se pueden eliminar turnos pasados" : undefined}
-                className={
-                  "btn-danger " +
-                  (isPastTurno ? "opacity-40 cursor-not-allowed" : "")
-                }
-              >
+                className={"btn-danger text-sm " + (isPastTurno ? "opacity-40 cursor-not-allowed" : "")}>
                 Eliminar
               </button>
             )}
           </div>
           <div className="flex gap-2">
-            <button
-              type="button"
-              className="btn-ghost"
-              onClick={onClose}
-              disabled={saving}
-            >
+            <button type="button" className="btn-ghost text-sm" onClick={onClose} disabled={saving}>
               Cancelar
             </button>
-            <button className="btn-primary" disabled={saving}>
+            <button className="btn-primary text-sm" disabled={saving}>
               {saving ? "Guardando…" : "Guardar"}
             </button>
           </div>
@@ -1124,6 +1054,64 @@ function SesionRapida({
   );
 }
 
+function TimePickerInline({
+  value,
+  onChange,
+  disabled,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  disabled?: boolean;
+}) {
+  const [hStr, mStr] = value.split(":");
+  const h = parseInt(hStr, 10);
+  const m = parseInt(mStr, 10);
+  const hours = Array.from({ length: 9 }, (_, i) => 13 + i);
+  const mins = [0, 10, 20, 30, 40, 50];
+
+  return (
+    <div className={`bg-ink-50 rounded-xl p-3 space-y-2.5 ${disabled ? "opacity-50 pointer-events-none" : ""}`}>
+      <p className="text-center text-2xl font-mono font-semibold text-brand-700 tracking-tight leading-none">
+        {value} <span className="text-base font-normal text-ink-400">hs</span>
+      </p>
+      {/* Horas */}
+      <div className="flex gap-1 overflow-x-auto no-scrollbar">
+        {hours.map((hr) => (
+          <button
+            key={hr}
+            type="button"
+            onClick={() => onChange(`${String(hr).padStart(2, "0")}:${String(m).padStart(2, "0")}`)}
+            className={`shrink-0 w-9 py-1.5 rounded-lg text-xs font-mono font-semibold transition ${
+              h === hr
+                ? "bg-brand-600 text-white shadow-sm"
+                : "bg-white text-ink-500 hover:text-brand-700 hover:bg-brand-50 border border-ink-200"
+            }`}
+          >
+            {hr}
+          </button>
+        ))}
+      </div>
+      {/* Minutos */}
+      <div className="flex gap-1">
+        {mins.map((mn) => (
+          <button
+            key={mn}
+            type="button"
+            onClick={() => onChange(`${String(h).padStart(2, "0")}:${String(mn).padStart(2, "0")}`)}
+            className={`flex-1 py-1.5 rounded-lg text-xs font-mono font-semibold transition ${
+              m === mn
+                ? "bg-brand-600 text-white shadow-sm"
+                : "bg-white text-ink-500 hover:text-brand-700 hover:bg-brand-50 border border-ink-200"
+            }`}
+          >
+            :{String(mn).padStart(2, "0")}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // UTC-3 fijo (Argentina sin DST) — no depende del timezone del navegador
 function toARDate(d: Date): string {
   const ar = new Date(d.getTime() - 3 * 60 * 60 * 1000);
@@ -1134,7 +1122,7 @@ function toARTime(d: Date): string {
   const ar = new Date(d.getTime() - 3 * 60 * 60 * 1000);
   const h = ar.getUTCHours();
   const m = ar.getUTCMinutes();
-  const rm = Math.round(m / 15) * 15;
+  const rm = Math.round(m / 10) * 10;
   if (rm === 60) return `${String(h + 1).padStart(2, "0")}:00`;
   return `${String(h).padStart(2, "0")}:${String(rm).padStart(2, "0")}`;
 }
@@ -1142,7 +1130,7 @@ function toARTime(d: Date): string {
 function timeOptions(): string[] {
   const opts: string[] = [];
   for (let h = 13; h <= 21; h++) {
-    for (let m = 0; m < 60; m += 15) {
+    for (let m = 0; m < 60; m += 10) {
       if (h === 21 && m > 0) break;
       opts.push(`${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`);
     }
@@ -1151,3 +1139,11 @@ function timeOptions(): string[] {
 }
 
 const TIME_OPTIONS = timeOptions();
+
+const TIME_GROUPS = Array.from({ length: 9 }, (_, i) => {
+  const hour = 13 + i;
+  const slots = hour < 21
+    ? ["00", "10", "20", "30", "40", "50"].map((m) => `${String(hour).padStart(2, "0")}:${m}`)
+    : ["21:00"];
+  return { hour, slots };
+});
