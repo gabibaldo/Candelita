@@ -5,3 +5,4 @@ node_modules/
 uploads/
 dev.db
 *.db
+.claude/
