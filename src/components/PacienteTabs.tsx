@@ -50,6 +50,7 @@ type Paciente = {
   motivoConsulta: string | null;
   diagnostico: string | null;
   objetivosTerapeuticos: string | null;
+  derivaciones: string | null;
   notasGenerales: string | null;
   turnos: Turno[];
   sesiones: Sesion[];
@@ -329,6 +330,12 @@ export default function PacienteTabs({ paciente }: { paciente: Paciente }) {
               pacienteId={paciente.id}
               initialText={paciente.objetivosTerapeuticos}
             />
+            {paciente.derivaciones && (
+              <div className="mt-4 pt-4 border-t border-ink-100">
+                <p className="text-xs font-semibold text-brand-600 mb-1.5">Derivaciones</p>
+                <p className="text-sm whitespace-pre-wrap text-ink-700">{paciente.derivaciones}</p>
+              </div>
+            )}
             {paciente.notasGenerales && (
               <div className="mt-4">
                 <p className="text-xs font-medium text-ink-500 mb-1">Notas generales</p>
@@ -341,6 +348,23 @@ export default function PacienteTabs({ paciente }: { paciente: Paciente }) {
         {/* ── Turnos ── */}
         {tab === "turnos" && (
           <div className="space-y-3">
+            {/* Resumen de deuda */}
+            {(() => {
+              const realizados = paciente.turnos.filter(t => t.estado === "realizado");
+              const sinCobrar = realizados.filter(t => !t.cobrado).length;
+              const monto = sinCobrar * (paciente.importeSesion ?? 0);
+              if (sinCobrar === 0) return null;
+              return (
+                <div className="flex items-center justify-between bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+                  <p className="text-sm text-amber-800 font-medium">
+                    {sinCobrar} sesión{sinCobrar !== 1 ? "es" : ""} sin cobrar
+                  </p>
+                  {monto > 0 && (
+                    <p className="text-sm font-semibold text-amber-900">{formatMoney(monto)}</p>
+                  )}
+                </div>
+              );
+            })()}
             <div className="flex justify-end">
               <button
                 onClick={() => setShowNewTurno(true)}

@@ -72,6 +72,7 @@ model Paciente {
   motivoConsulta           String?
   diagnostico              String?
   objetivosTerapeuticos    String?
+  derivaciones             String?  // profesionales que trabajan en paralelo (JSON o texto libre)
   // Estado
   activo              Boolean  @default(true)
   notasGenerales      String?

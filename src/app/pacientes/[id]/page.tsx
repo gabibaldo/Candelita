@@ -56,6 +56,7 @@ export default async function PacientePage({
     motivoConsulta: paciente.motivoConsulta,
     diagnostico: paciente.diagnostico,
     objetivosTerapeuticos: paciente.objetivosTerapeuticos,
+    derivaciones: (paciente as any).derivaciones ?? null,
     notasGenerales: paciente.notasGenerales,
     turnos: paciente.turnos.map((t) => ({
       id: t.id,

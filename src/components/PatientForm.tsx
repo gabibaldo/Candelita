@@ -24,6 +24,7 @@ export type PatientFormData = {
   motivoConsulta?: string | null;
   diagnostico?: string | null;
   objetivosTerapeuticos?: string | null;
+  derivaciones?: string | null;
   notasGenerales?: string | null;
   activo?: boolean;
 };
@@ -350,6 +351,15 @@ export default function PatientForm({ initial }: { initial?: PatientFormData }) 
               value={data.objetivosTerapeuticos ?? ""}
               onChange={(e) => set("objetivosTerapeuticos", e.target.value)}
               placeholder="Metas del proceso terapéutico…"
+            />
+          </div>
+          <div>
+            <label className="label">Derivaciones</label>
+            <textarea
+              className="textarea"
+              placeholder="Ej: Dr. García (psiquiatra) · Fga. López (fonoaudiología)…"
+              value={data.derivaciones ?? ""}
+              onChange={(e) => set("derivaciones", e.target.value)}
             />
           </div>
           <div>

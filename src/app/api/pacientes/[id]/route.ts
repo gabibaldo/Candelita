@@ -27,6 +27,7 @@ const UpdateSchema = z
     sesionesAutorizadas: z.union([z.number(), z.string()]).optional().nullable(),
     importeSesion: z.union([z.number(), z.string()]).optional().nullable(),
     motivoConsulta: z.string().optional().nullable(),
+    derivaciones: z.string().optional().nullable(),
     diagnostico: z.string().optional().nullable(),
     objetivosTerapeuticos: z.string().optional().nullable(),
     notasGenerales: z.string().optional().nullable(),
