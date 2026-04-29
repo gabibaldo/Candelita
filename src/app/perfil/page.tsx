@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useToast } from "@/components/Toast";
-import { User, CreditCard, Save, KeyRound, Calendar, CheckCircle2, XCircle } from "lucide-react";
+import { User, CreditCard, Save, KeyRound, Calendar, CheckCircle2, XCircle, Download } from "lucide-react";
 
 type Perfil = {
   id: number;
@@ -440,6 +440,19 @@ export default function PerfilPage() {
             </button>
           </div>
         </form>
+      </Section>
+
+      <Section icon={<Download className="w-5 h-5" />} title="Exportar datos">
+        <p className="text-sm text-ink-500 mb-4">
+          Descargá un backup completo de tus pacientes, turnos y sesiones en formato JSON.
+        </p>
+        <a
+          href="/api/exportar"
+          download
+          className="btn-ghost inline-flex items-center gap-2"
+        >
+          <Download className="w-4 h-4" /> Descargar backup
+        </a>
       </Section>
     </div>
   );
