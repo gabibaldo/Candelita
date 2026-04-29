@@ -32,7 +32,8 @@ export async function GET(req: NextRequest) {
       paciente: {
         select: {
           nombre: true, apellido: true, diagnostico: true, motivoConsulta: true,
-          tutorNombre: true, tutorTelefono: true, telefono: true, notasGenerales: true,
+          tutorNombre: true, tutorTelefono: true, tutorEmail: true,
+          recordatorioEmail: true, notasGenerales: true,
         },
       },
       sesion: { select: { resumen: true, fecha: true } },

@@ -8,14 +8,14 @@ export type PatientFormData = {
   nombre: string;
   apellido: string;
   fechaNacimiento?: string | null;
-  telefono?: string | null;
-  celular?: string | null;
-  email?: string | null;
   direccion?: string | null;
   tutorNombre?: string | null;
   tutorTelefono?: string | null;
+  tutorCelular?: string | null;
+  tutorEmail?: string | null;
   tutorDni?: string | null;
   tutorRelacion?: string | null;
+  recordatorioEmail?: boolean;
   tipo: "particular" | "obra_social";
   obraSocialNombre?: string | null;
   numeroAfiliado?: string | null;
@@ -151,7 +151,7 @@ export default function PatientForm({ initial }: { initial?: PatientFormData }) 
   return (
     <form onSubmit={onSubmit} className="space-y-6">
       <section className="card p-5">
-        <h3 className="font-semibold text-brand-800 mb-3">Datos básicos</h3>
+        <h3 className="font-semibold text-brand-800 mb-3">Datos del paciente</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="label">Apellido *</label>
@@ -176,41 +176,12 @@ export default function PatientForm({ initial }: { initial?: PatientFormData }) 
             <input
               type="date"
               className="input"
-              value={
-                data.fechaNacimiento
-                  ? String(data.fechaNacimiento).slice(0, 10)
-                  : ""
-              }
+              value={data.fechaNacimiento ? String(data.fechaNacimiento).slice(0, 10) : ""}
               onChange={(e) => set("fechaNacimiento", e.target.value || null)}
             />
           </div>
           <div>
-            <label className="label">Teléfono</label>
-            <PhoneInput
-              value={data.telefono ?? ""}
-              onChange={(v) => set("telefono", v || null)}
-            />
-          </div>
-          <div>
-            <label className="label">Celular</label>
-            <PhoneInput
-              value={data.celular ?? ""}
-              onChange={(v) => set("celular", v || null)}
-              placeholder="11 5678-9012"
-              isCelular
-            />
-          </div>
-          <div>
-            <label className="label">Email</label>
-            <input
-              type="email"
-              className="input"
-              value={data.email ?? ""}
-              onChange={(e) => set("email", e.target.value)}
-            />
-          </div>
-          <div className="md:col-span-2">
-            <label className="label">Dirección</label>
+            <label className="label">Dirección familiar</label>
             <input
               className="input"
               value={data.direccion ?? ""}
@@ -221,12 +192,10 @@ export default function PatientForm({ initial }: { initial?: PatientFormData }) 
       </section>
 
       <section className="card p-5">
-        <h3 className="font-semibold text-brand-800 mb-3">
-          Tutor / responsable
-        </h3>
+        <h3 className="font-semibold text-brand-800 mb-3">Tutor / responsable</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="label">Nombre del tutor</label>
+            <label className="label">Nombre</label>
             <input
               className="input"
               value={data.tutorNombre ?? ""}
@@ -243,18 +212,50 @@ export default function PatientForm({ initial }: { initial?: PatientFormData }) 
             />
           </div>
           <div>
-            <label className="label">Teléfono del tutor</label>
+            <label className="label">Teléfono</label>
             <PhoneInput
               value={data.tutorTelefono ?? ""}
               onChange={(v) => set("tutorTelefono", v || null)}
             />
           </div>
           <div>
-            <label className="label">DNI del tutor</label>
+            <label className="label">Celular</label>
+            <PhoneInput
+              value={data.tutorCelular ?? ""}
+              onChange={(v) => set("tutorCelular", v || null)}
+              placeholder="11 5678-9012"
+              isCelular
+            />
+          </div>
+          <div>
+            <label className="label">DNI</label>
             <DNIInput
               value={data.tutorDni ?? ""}
               onChange={(v) => set("tutorDni", v || null)}
             />
+          </div>
+          <div>
+            <label className="label">Email</label>
+            <input
+              type="email"
+              className="input"
+              value={data.tutorEmail ?? ""}
+              onChange={(e) => set("tutorEmail", e.target.value || null)}
+              placeholder="tutor@email.com"
+            />
+          </div>
+          <div className="md:col-span-2">
+            <label className="flex items-center gap-3 cursor-pointer select-none">
+              <div
+                onClick={() => set("recordatorioEmail", !data.recordatorioEmail)}
+                className={`relative w-10 h-6 rounded-full transition-colors ${data.recordatorioEmail ? "bg-brand-600" : "bg-ink-200"}`}
+              >
+                <span className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${data.recordatorioEmail ? "translate-x-4" : ""}`} />
+              </div>
+              <span className="text-sm text-ink-700">
+                Enviar recordatorio por email al tutor el día anterior al turno
+              </span>
+            </label>
           </div>
         </div>
       </section>

@@ -57,8 +57,11 @@ model Paciente {
   // Tutor / responsable
   tutorNombre         String?
   tutorTelefono       String?
+  tutorCelular        String?
+  tutorEmail          String?
   tutorDni            String?
   tutorRelacion       String?  // padre, madre, abuelo, etc.
+  recordatorioEmail   Boolean  @default(false)
   // Tipo de atención
   tipo                String   // "particular" | "obra_social"
   obraSocialNombre    String?
