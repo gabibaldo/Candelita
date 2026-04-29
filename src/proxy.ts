@@ -26,8 +26,9 @@ export async function proxy(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // Sin sesión → redirigir a login (páginas) o 401 (API)
-  if (!session) {
+  const SESSION_MAX_MS = 2 * 60 * 60 * 1000; // 2 horas absolutas
+
+  function expiredOrMissing() {
     if (pathname.startsWith("/api/")) {
       return NextResponse.json({ error: "No autenticado" }, { status: 401 });
     }
@@ -36,6 +37,13 @@ export async function proxy(req: NextRequest) {
     url.searchParams.set("next", pathname);
     return NextResponse.redirect(url);
   }
+
+  // Sin sesión → redirigir a login (páginas) o 401 (API)
+  if (!session) return expiredOrMissing();
+
+  // Límite absoluto de 2 horas desde el login original
+  const loginAt = session.loginAt ?? 0;
+  if (!loginAt || Date.now() - loginAt > SESSION_MAX_MS) return expiredOrMissing();
 
   // Sesión deslizante: renovar el token en cada request autenticado
   const newToken = await createToken(session);

@@ -40,6 +40,7 @@ export async function POST(req: NextRequest) {
     sub: String(user.id),
     email: user.email,
     nombre: user.nombre,
+    loginAt: Date.now(),
   });
 
   return NextResponse.json({ ok: true });

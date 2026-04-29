@@ -44,29 +44,13 @@ function buildHtml(turnos: TurnoDelDia[], fecha: Date): string {
   const items = turnos
     .map((t) => {
       const hora = `${formatHora(t.inicio)} – ${formatHora(t.fin)}`;
-      const contacto =
-        t.paciente.tutorNombre
-          ? `${t.paciente.tutorNombre} · ${t.paciente.tutorTelefono ?? "sin tel."}`
-          : t.paciente.telefono ?? "sin contacto";
-
-      const meet = t.meetLink
-        ? `<p style="margin:4px 0"><a href="${t.meetLink}" style="color:#6d28d9">Link Meet</a></p>`
-        : "";
-
-      const ultimaSesion = t.sesion
-        ? `<p style="margin:4px 0;color:#6b7280;font-size:13px"><strong>Última sesión:</strong> ${t.sesion.resumen.slice(0, 200)}${t.sesion.resumen.length > 200 ? "…" : ""}</p>`
-        : "";
 
       return `
         <div style="border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin-bottom:12px">
           <p style="margin:0 0 4px;font-size:16px;font-weight:600;color:#1f2937">
             ${hora} · ${t.paciente.nombre} ${t.paciente.apellido}
           </p>
-          <p style="margin:4px 0;color:#6b7280;font-size:13px">${t.modalidad === "virtual" ? "Virtual" : "Presencial"} · ${contacto}</p>
           ${t.paciente.diagnostico ? `<p style="margin:4px 0;color:#6b7280;font-size:13px"><strong>Diagnóstico:</strong> ${t.paciente.diagnostico}</p>` : ""}
-          ${t.paciente.notasGenerales ? `<p style="margin:4px 0;color:#6b7280;font-size:13px"><strong>Notas:</strong> ${t.paciente.notasGenerales}</p>` : ""}
-          ${meet}
-          ${ultimaSesion}
         </div>`;
     })
     .join("");
@@ -91,7 +75,7 @@ export async function enviarRecordatorio(
   await resend.emails.send({
     from: "Candelita <onboarding@resend.dev>",
     to: destinatario,
-    subject: `Turnos de mañana · ${fechaStr}`,
+    subject: `Recordatorio de Turnos - ${fechaStr}`,
     html: buildHtml(turnos, fecha),
   });
 }

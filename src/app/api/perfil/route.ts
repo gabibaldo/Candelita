@@ -110,6 +110,7 @@ export async function PATCH(req: NextRequest) {
         sub: session.sub,
         email: updated.email,
         nombre: updated.nombre,
+        loginAt: session.loginAt,
       });
     }
 

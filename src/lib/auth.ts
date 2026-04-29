@@ -18,6 +18,7 @@ export type SessionPayload = {
   sub: string; // id de usuario
   email: string;
   nombre: string;
+  loginAt: number; // timestamp de login original para límite absoluto
 };
 
 // Duración de la sesión: 90 minutos (se renueva con cada request)
@@ -59,6 +60,7 @@ export async function getSession(): Promise<SessionPayload | null> {
       sub: String(payload.sub),
       email: String(payload.email),
       nombre: String(payload.nombre),
+      loginAt: Number(payload.loginAt ?? 0),
     };
   } catch {
     return null;

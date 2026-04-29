@@ -3,9 +3,9 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Clock, LogOut, RefreshCw } from "lucide-react";
 
-// 10 minutos sin actividad → mostrar aviso
-const IDLE_MS = 10 * 60 * 1000;
-// 5 minutos de aviso → cerrar sesión automáticamente
+// 15 minutos sin actividad → mostrar aviso
+const IDLE_MS = 15 * 60 * 1000;
+// 5 minutos de aviso → cerrar sesión automáticamente (total 20 min)
 const WARN_MS = 5 * 60 * 1000;
 
 const EVENTS = ["mousemove", "keydown", "mousedown", "touchstart", "scroll"] as const;
