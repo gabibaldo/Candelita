@@ -13,11 +13,17 @@ const PUBLIC_PATHS = [
 export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
+  const SESSION_MAX_MS = 2 * 60 * 60 * 1000; // 2 horas absolutas
+
   const token = req.cookies.get(SESSION_COOKIE)?.value;
   const session = await verifyToken(token);
 
+  // Sesión válida = existe y tiene loginAt vigente
+  const loginAt = session?.loginAt ?? 0;
+  const validSession = !!session && !!loginAt && Date.now() - loginAt <= SESSION_MAX_MS;
+
   // Si ya está autenticada y va a /login → redirigir al inicio
-  if (pathname === "/login" && session) {
+  if (pathname === "/login" && validSession) {
     return NextResponse.redirect(new URL("/", req.url));
   }
 
@@ -25,8 +31,6 @@ export async function proxy(req: NextRequest) {
   if (PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/"))) {
     return NextResponse.next();
   }
-
-  const SESSION_MAX_MS = 2 * 60 * 60 * 1000; // 2 horas absolutas
 
   function expiredOrMissing() {
     if (pathname.startsWith("/api/")) {
@@ -38,12 +42,7 @@ export async function proxy(req: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Sin sesión → redirigir a login (páginas) o 401 (API)
-  if (!session) return expiredOrMissing();
-
-  // Límite absoluto de 2 horas desde el login original
-  const loginAt = session.loginAt ?? 0;
-  if (!loginAt || Date.now() - loginAt > SESSION_MAX_MS) return expiredOrMissing();
+  if (!validSession) return expiredOrMissing();
 
   // Sesión deslizante: renovar el token en cada request autenticado
   const newToken = await createToken(session);

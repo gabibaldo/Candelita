@@ -28,7 +28,8 @@
       "Bash(DATABASE_URL=\"postgresql://neondb_owner:npg_MQRfvG12lrgy@ep-falling-hill-amhpiiv3-pooler.c-5.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require\" npx prisma migrate deploy)",
       "Bash(DATABASE_URL=\"postgresql://neondb_owner:npg_MQRfvG12lrgy@ep-falling-hill-amhpiiv3-pooler.c-5.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require\" npx tsx prisma/seed.ts)",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/login)",
-      "Bash(node -e 'const {PrismaClient}=require\\('\\\\''@prisma/client'\\\\''\\);const p=new PrismaClient\\(\\);p.usuario.findFirst\\({select:{email:true}}\\).then\\(r=>console.log\\(r\\)\\).finally\\(\\(\\)=>p.$disconnect\\(\\)\\)')"
+      "Bash(node -e 'const {PrismaClient}=require\\('\\\\''@prisma/client'\\\\''\\);const p=new PrismaClient\\(\\);p.usuario.findFirst\\({select:{email:true}}\\).then\\(r=>console.log\\(r\\)\\).finally\\(\\(\\)=>p.$disconnect\\(\\)\\)')",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" https://candelita.vercel.app/login)"
     ]
   }
 }
