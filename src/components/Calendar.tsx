@@ -20,7 +20,7 @@ import Link from "next/link";
 import { useToast } from "@/components/Toast";
 import PatientCombobox from "@/components/PatientCombobox";
 
-type PacienteMini = {
+export type PacienteMini = {
   id: number;
   nombre: string;
   apellido: string;
@@ -455,7 +455,7 @@ export default function Calendar({
           hiddenDays={[0]}
           slotMinTime="13:00:00"
           slotMaxTime="21:00:00"
-          slotDuration="00:10:00"
+          slotDuration="00:30:00"
           snapDuration="00:10:00"
           businessHours={{
             daysOfWeek: [1, 2, 3, 4, 5, 6],
@@ -468,8 +468,7 @@ export default function Calendar({
           selectable
           selectMirror
           nowIndicator
-          height={640}
-          expandRows
+          height={580}
           stickyHeaderDates
           headerToolbar={{
             left: "prev,next today",
@@ -551,7 +550,7 @@ export default function Calendar({
   );
 }
 
-function TurnoModal({
+export function TurnoModal({
   pacientes,
   data,
   onClose,
@@ -857,7 +856,7 @@ function TurnoModal({
                     value={duracion !== null && ![30, 45, 60, 75, 90].includes(duracion) ? duracion : ""}
                     onChange={(e) => {
                       const v = parseInt(e.target.value);
-                      if (!isNaN(v) && v >= 15) setDuracion(v);
+                      if (!isNaN(v) && v > 0) setDuracion(v);
                       else if (e.target.value === "") setDuracion(45);
                     }}
                     className="w-14 text-center text-xs rounded-lg border border-ink-200 bg-white px-2 py-1 focus:outline-none focus:ring-2 focus:ring-brand-400" />

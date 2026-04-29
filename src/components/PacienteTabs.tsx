@@ -1,12 +1,13 @@
 "use client";
 import { useState, useRef } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { User, CalendarDays, FileText, Paperclip, Target, Plus, Check, Search } from "lucide-react";
 import Link from "next/link";
 import SessionForm from "@/components/SessionForm";
 import SessionList from "@/components/SessionList";
 import ArchivosSection from "@/components/ArchivosSection";
 import { formatDate, formatDateTime, formatMoney } from "@/lib/utils";
+import { TurnoModal, type PacienteMini } from "@/components/Calendar";
 
 type Tab = "info" | "turnos" | "historia" | "archivos";
 
@@ -166,8 +167,10 @@ function ObjetivosChecklist({ pacienteId, initialText }: { pacienteId: number; i
 
 export default function PacienteTabs({ paciente }: { paciente: Paciente }) {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const tabParam = searchParams.get("tab") as Tab | null;
   const turnoParam = searchParams.get("turno");
+  const [showNewTurno, setShowNewTurno] = useState(false);
 
   // Estado de sesiones centralizado aquí para que SessionForm y SessionList compartan la misma fuente
   const [sesiones, setSesiones] = useState<Sesion[]>(paciente.sesiones);
@@ -338,6 +341,14 @@ export default function PacienteTabs({ paciente }: { paciente: Paciente }) {
         {/* ── Turnos ── */}
         {tab === "turnos" && (
           <div className="space-y-3">
+            <div className="flex justify-end">
+              <button
+                onClick={() => setShowNewTurno(true)}
+                className="btn-primary text-sm flex items-center gap-1.5"
+              >
+                <Plus className="w-4 h-4" /> Nuevo turno
+              </button>
+            </div>
             {paciente.turnos.length === 0 ? (
               <div className="card p-6 text-center text-ink-400">
                 <CalendarDays className="w-8 h-8 mx-auto mb-2 opacity-30" />
@@ -462,6 +473,31 @@ export default function PacienteTabs({ paciente }: { paciente: Paciente }) {
           <ArchivosSection pacienteId={paciente.id} />
         )}
       </div>
+
+      {showNewTurno && (() => {
+        const now = new Date();
+        const start = new Date(now);
+        start.setMinutes(0, 0, 0);
+        const end = new Date(start.getTime() + 45 * 60_000);
+        const pacienteMini: PacienteMini = {
+          id: paciente.id,
+          nombre: paciente.nombre,
+          apellido: paciente.apellido,
+          tipo: paciente.tipo,
+          importeSesion: paciente.importeSesion ?? 0,
+          obraSocialNombre: paciente.obraSocialNombre,
+        };
+        return (
+          <TurnoModal
+            pacientes={[pacienteMini]}
+            data={{ kind: "create", inicio: start, fin: end }}
+            onClose={() => {
+              setShowNewTurno(false);
+              router.refresh();
+            }}
+          />
+        );
+      })()}
     </div>
   );
 }

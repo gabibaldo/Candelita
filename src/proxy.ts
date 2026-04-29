@@ -7,6 +7,7 @@ const PUBLIC_PATHS = [
   "/reset-password",
   "/api/auth/reset-request",
   "/api/auth/reset-confirm",
+  "/api/cron/recordatorio",
 ];
 
 export async function proxy(req: NextRequest) {

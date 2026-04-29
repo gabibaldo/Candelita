@@ -23,7 +23,12 @@
       "Bash(openssl rand *)",
       "Bash(npx tsx -e ' *)",
       "Bash(git -C \"/Users/gabrielbaldomir/Documents/Claude/Projects/Candelita NO durmio siesta\" status)",
-      "Read(//Users/gabrielbaldomir/.claude/**)"
+      "Read(//Users/gabrielbaldomir/.claude/**)",
+      "Bash(dotenv -e .env.local -- npx prisma migrate deploy)",
+      "Bash(DATABASE_URL=\"postgresql://neondb_owner:npg_MQRfvG12lrgy@ep-falling-hill-amhpiiv3-pooler.c-5.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require\" npx prisma migrate deploy)",
+      "Bash(DATABASE_URL=\"postgresql://neondb_owner:npg_MQRfvG12lrgy@ep-falling-hill-amhpiiv3-pooler.c-5.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require\" npx tsx prisma/seed.ts)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/login)",
+      "Bash(node -e 'const {PrismaClient}=require\\('\\\\''@prisma/client'\\\\''\\);const p=new PrismaClient\\(\\);p.usuario.findFirst\\({select:{email:true}}\\).then\\(r=>console.log\\(r\\)\\).finally\\(\\(\\)=>p.$disconnect\\(\\)\\)')"
     ]
   }
 }
