@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { getSession } from "@/lib/auth";
 import { z } from "zod";
 
 export const runtime = "nodejs";
@@ -22,6 +23,9 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const s = await getSession();
+  if (!s) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+
   const { id: idStr } = await params;
   const id = parseId(idStr);
   if (id == null) return NextResponse.json({ error: "id inválido" }, { status: 400 });
@@ -37,9 +41,12 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const s = await getSession();
+  if (!s) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+
   const { id: idStr } = await params;
   const id = parseId(idStr);
   if (id == null) return NextResponse.json({ error: "id inválido" }, { status: 400 });

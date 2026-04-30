@@ -1,10 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { getSession } from "@/lib/auth";
 import { put } from "@vercel/blob";
 
 export const runtime = "nodejs";
 
+const ALLOWED_MIME_PREFIXES = [
+  "image/",
+  "application/pdf",
+  "text/plain",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument",
+  "application/vnd.ms-",
+];
+
+function isMimeAllowed(mime: string) {
+  return ALLOWED_MIME_PREFIXES.some((p) => mime.startsWith(p));
+}
+
 export async function GET(req: NextRequest) {
+  const s = await getSession();
+  if (!s) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+
   const { searchParams } = new URL(req.url);
   const pacienteId = searchParams.get("pacienteId");
   if (!pacienteId || isNaN(Number(pacienteId))) {
@@ -18,6 +35,9 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const s = await getSession();
+  if (!s) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+
   const formData = await req.formData().catch(() => null);
   if (!formData) {
     return NextResponse.json({ error: "FormData inválido" }, { status: 400 });
@@ -39,6 +59,14 @@ export async function POST(req: NextRequest) {
   const MAX_SIZE = 10 * 1024 * 1024;
   if (file.size > MAX_SIZE) {
     return NextResponse.json({ error: "El archivo no puede superar 10 MB" }, { status: 400 });
+  }
+
+  const mimeType = file.type || "application/octet-stream";
+  if (!isMimeAllowed(mimeType)) {
+    return NextResponse.json(
+      { error: "Tipo de archivo no permitido. Solo imágenes, PDF y documentos de Office." },
+      { status: 400 }
+    );
   }
 
   const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, "_").slice(0, 100);

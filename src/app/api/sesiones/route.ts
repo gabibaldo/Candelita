@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { getSession } from "@/lib/auth";
 import { z } from "zod";
 
 export const runtime = "nodejs";
@@ -15,6 +16,9 @@ const SesionSchema = z.object({
 });
 
 export async function GET(req: NextRequest) {
+  const s = await getSession();
+  if (!s) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+
   const { searchParams } = new URL(req.url);
   const pacienteId = searchParams.get("pacienteId");
   const where: any = {};
@@ -28,6 +32,9 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const s = await getSession();
+  if (!s) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+
   const body = await req.json().catch(() => null);
   const parsed = SesionSchema.safeParse(body);
   if (!parsed.success) {
