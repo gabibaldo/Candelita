@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   CheckCircle2,
@@ -76,19 +76,21 @@ export default function AgendaWeekClient({
   const [now, setNow] = useState(new Date(0));
   useEffect(() => { setNow(new Date()); }, []);
 
-  const byDay = new Map<string, TurnoAgenda[]>();
-  for (const t of turnos) {
-    const key = new Date(t.inicio).toLocaleDateString("en-CA", {
-      timeZone: "America/Argentina/Buenos_Aires",
-    });
-    if (!byDay.has(key)) byDay.set(key, []);
-    byDay.get(key)!.push(t);
-  }
-
-  const visibleSet = new Set(visibleDayKeys);
-  const diasFuturos = Array.from(byDay.entries())
-    .filter(([k]) => k >= todayStr && visibleSet.has(k))
-    .sort(([a], [b]) => a.localeCompare(b));
+  const { byDay, diasFuturos } = useMemo(() => {
+    const map = new Map<string, TurnoAgenda[]>();
+    for (const t of turnos) {
+      const key = new Date(t.inicio).toLocaleDateString("en-CA", {
+        timeZone: "America/Argentina/Buenos_Aires",
+      });
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(t);
+    }
+    const visibleSet = new Set(visibleDayKeys);
+    const dias = Array.from(map.entries())
+      .filter(([k]) => k >= todayStr && visibleSet.has(k))
+      .sort(([a], [b]) => a.localeCompare(b));
+    return { byDay: map, diasFuturos: dias };
+  }, [turnos, todayStr, visibleDayKeys]);
 
   async function toggleCobrado(turno: TurnoAgenda) {
     const next = !turno.cobrado;

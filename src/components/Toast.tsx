@@ -15,7 +15,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 
-type ToastKind = "success" | "error" | "info";
+type ToastKind = "success" | "error" | "info" | "warn";
 type Toast = { id: number; kind: ToastKind; msg: string };
 
 type ConfirmOpts = {
@@ -99,6 +99,9 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             )}
             {t.kind === "info" && (
               <Info className="w-5 h-5 text-brand-600 shrink-0 mt-0.5" />
+            )}
+            {t.kind === "warn" && (
+              <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
             )}
             <p className="text-sm text-ink-800">{t.msg}</p>
             <button

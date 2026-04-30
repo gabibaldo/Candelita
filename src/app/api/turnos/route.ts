@@ -94,7 +94,10 @@ export async function POST(req: NextRequest) {
   let importe: number | null = null;
   if (importeRaw !== undefined && importeRaw !== null && importeRaw !== "") {
     const n = Number(importeRaw);
-    importe = Number.isFinite(n) ? n : null;
+    if (!Number.isFinite(n)) {
+      return NextResponse.json({ error: "Importe inválido" }, { status: 400 });
+    }
+    importe = n;
   }
 
   const semanas = d.repetirSemanas ?? 0;
@@ -143,8 +146,10 @@ export async function POST(req: NextRequest) {
             data: { googleEventId, meetLink },
           });
           return NextResponse.json({ ...turno, googleEventId, meetLink }, { status: 201 });
-        } catch {
-          // Si falla Google Calendar, el turno se guarda igual
+        } catch (e) {
+          console.error("[Google Calendar] Error al crear evento:", e);
+          // El turno se guarda igual, pero avisamos al cliente
+          return NextResponse.json({ ...turno, googleCalendarError: true }, { status: 201 });
         }
       }
     }

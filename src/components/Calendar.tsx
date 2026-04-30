@@ -682,6 +682,10 @@ export function TurnoModal({
           typeof d.error === "string" ? d.error : "No pude guardar el turno"
         );
       }
+      const saved = await res.json().catch(() => ({}));
+      if (saved.googleCalendarError) {
+        toast("Turno guardado, pero no se pudo crear el evento en Google Calendar. Reconectá tu cuenta en Perfil.", "warn");
+      }
       onClose();
     } catch (e: any) {
       setErr(e.message);
@@ -690,7 +694,7 @@ export function TurnoModal({
     }
   }
 
-  const { confirm } = useToast();
+  const { confirm, toast } = useToast();
 
   async function remove() {
     if (!isEdit) return;
