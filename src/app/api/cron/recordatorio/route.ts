@@ -1,17 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { enviarRecordatorio } from "@/lib/email";
+import { enviarRecordatorio, type TurnoDelDia } from "@/lib/email";
+import crypto from "crypto";
 
 export const runtime = "nodejs";
 
 export async function GET(req: NextRequest) {
   // Vercel Cron autentica con Authorization: Bearer <CRON_SECRET>
-  const auth = req.headers.get("authorization");
-  if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
+  const auth = req.headers.get("authorization") ?? "";
+  const expected = Buffer.from(`Bearer ${process.env.CRON_SECRET ?? ""}`, "utf8");
+  const actual = Buffer.from(auth, "utf8");
+  const authorized = expected.length === actual.length && crypto.timingSafeEqual(expected, actual);
+  if (!authorized) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const usuario = await (prisma.usuario as any).findFirst({ select: { email: true } });
+  const usuario = await prisma.usuario.findFirst({ select: { email: true } });
   if (!usuario) return NextResponse.json({ ok: true });
 
   const ahora = new Date();
@@ -41,7 +45,7 @@ export async function GET(req: NextRequest) {
   });
 
   if (turnos.length > 0) {
-    await enviarRecordatorio(usuario.email, turnos as any, inicioManana);
+    await enviarRecordatorio(usuario.email, turnos as TurnoDelDia[], inicioManana);
   }
 
   return NextResponse.json({ ok: true, enviados: turnos.length });

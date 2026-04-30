@@ -10,9 +10,9 @@ const SesionSchema = z.object({
   turnoId: z.number().int().positive().optional().nullable(),
   fecha: z.string(),
   tipo: z.enum(["sesion", "nota"]).optional().default("sesion"),
-  resumen: z.string().min(1),
-  objetivos: z.string().optional().nullable(),
-  proximosPasos: z.string().optional().nullable(),
+  resumen: z.string().min(1).max(10000),
+  objetivos: z.string().max(10000).optional().nullable(),
+  proximosPasos: z.string().max(10000).optional().nullable(),
 });
 
 export async function GET(req: NextRequest) {

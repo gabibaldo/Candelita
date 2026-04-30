@@ -8,7 +8,7 @@ export async function POST() {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
 
-  await (prisma.usuario as any).update({
+  await prisma.usuario.update({
     where: { id: Number(session.sub) },
     data: {
       googleAccessToken: null,

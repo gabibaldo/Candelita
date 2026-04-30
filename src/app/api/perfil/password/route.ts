@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
+import { auditLog } from "@/lib/audit";
 
 export const runtime = "nodejs";
 
@@ -36,5 +37,6 @@ export async function POST(req: NextRequest) {
     data: { passwordHash: nuevoHash },
   });
 
+  await auditLog({ usuarioId: Number(session.sub), action: "pwd_change" });
   return NextResponse.json({ ok: true });
 }

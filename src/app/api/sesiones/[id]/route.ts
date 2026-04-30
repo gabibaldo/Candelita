@@ -8,15 +8,15 @@ export const runtime = "nodejs";
 const UpdateSchema = z
   .object({
     fecha: z.string().optional(),
-    resumen: z.string().min(1).optional(),
-    objetivos: z.string().optional().nullable(),
-    proximosPasos: z.string().optional().nullable(),
+    resumen: z.string().min(1).max(10000).optional(),
+    objetivos: z.string().max(10000).optional().nullable(),
+    proximosPasos: z.string().max(10000).optional().nullable(),
   })
   .strict();
 
 function parseId(id: string) {
   const n = Number(id);
-  return Number.isFinite(n) ? n : null;
+  return Number.isFinite(n) && n > 0 && Number.isInteger(n) ? n : null;
 }
 
 export async function PATCH(
@@ -29,6 +29,11 @@ export async function PATCH(
   const { id: idStr } = await params;
   const id = parseId(idStr);
   if (id == null) return NextResponse.json({ error: "id inválido" }, { status: 400 });
+
+  const existing = await prisma.sesion.findUnique({ where: { id }, include: { paciente: { select: { usuarioId: true } } } });
+  if (!existing) return NextResponse.json({ error: "No encontrado" }, { status: 404 });
+  if (existing.paciente.usuarioId !== Number(s.sub)) return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+
   const body = await req.json().catch(() => null);
   const parsed = UpdateSchema.safeParse(body);
   if (!parsed.success) {
@@ -50,6 +55,11 @@ export async function DELETE(
   const { id: idStr } = await params;
   const id = parseId(idStr);
   if (id == null) return NextResponse.json({ error: "id inválido" }, { status: 400 });
+
+  const existing = await prisma.sesion.findUnique({ where: { id }, include: { paciente: { select: { usuarioId: true } } } });
+  if (!existing) return NextResponse.json({ error: "No encontrado" }, { status: 404 });
+  if (existing.paciente.usuarioId !== Number(s.sub)) return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+
   await prisma.sesion.delete({ where: { id } });
   return NextResponse.json({ ok: true });
 }

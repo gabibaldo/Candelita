@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { ChevronDown, Check, Loader2 } from "lucide-react";
+import { ChevronDown, Check, Loader2, Sparkles } from "lucide-react";
 
 type TurnoOpt = { id: number; inicio: string };
 
@@ -142,7 +142,31 @@ export default function SessionForm({
   const [proximosPasos, setProximosPasos] = useState("");
   const [turnoId, setTurnoId] = useState<string>(initialTurnoId ?? "");
   const [saving, setSaving] = useState(false);
+  const [generando, setGenerando] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+
+  async function generarConIA() {
+    if (!resumen.trim()) {
+      setErr("Escribí algunas notas antes de generar el resumen.");
+      return;
+    }
+    setGenerando(true);
+    setErr(null);
+    try {
+      const res = await fetch("/api/ia/resumen", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ notas: resumen }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error ?? "Error al generar el resumen");
+      setResumen(data.resumen);
+    } catch (e: any) {
+      setErr(e.message);
+    } finally {
+      setGenerando(false);
+    }
+  }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -222,6 +246,15 @@ export default function SessionForm({
               {p.label}
             </button>
           ))}
+          <button
+            type="button"
+            onClick={generarConIA}
+            disabled={generando}
+            className="ml-1 text-[11px] px-2.5 py-0.5 rounded-full border border-brand-300 text-brand-700 bg-brand-50 hover:bg-brand-100 transition inline-flex items-center gap-1 disabled:opacity-50"
+          >
+            {generando ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+            {generando ? "Generando…" : "IA"}
+          </button>
         </div>
         <textarea
           className="textarea min-h-[140px]"

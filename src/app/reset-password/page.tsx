@@ -1,14 +1,22 @@
 "use client";
-import { Suspense, useState } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { Suspense, useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { HeartHandshake, Eye, EyeOff, CheckCircle2, AlertTriangle } from "lucide-react";
 import Link from "next/link";
 
 function ResetPasswordForm() {
-  const params = useSearchParams();
   const router = useRouter();
-  const token = params.get("token") ?? "";
-  const email = params.get("email") ?? "";
+  const [token, setToken] = useState<string | null>(null);
+  const [email, setEmail] = useState<string | null>(null);
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    const hash = window.location.hash.slice(1);
+    const params = new URLSearchParams(hash);
+    setToken(params.get("token") ?? "");
+    setEmail(params.get("email") ?? "");
+    setReady(true);
+  }, []);
 
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -16,6 +24,10 @@ function ResetPasswordForm() {
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+
+  if (!ready) {
+    return <p className="text-sm text-ink-400 text-center">Cargando…</p>;
+  }
 
   if (!token || !email) {
     return (

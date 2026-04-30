@@ -29,11 +29,11 @@ const PacienteSchema = z.object({
     .optional()
     .nullable(),
   importeSesion: z.union([z.number(), z.string()]).optional().nullable(),
-  motivoConsulta: z.string().optional().nullable(),
-  derivaciones: z.string().optional().nullable(),
-  diagnostico: z.string().optional().nullable(),
-  objetivosTerapeuticos: z.string().optional().nullable(),
-  notasGenerales: z.string().optional().nullable(),
+  motivoConsulta: z.string().max(10000).optional().nullable(),
+  derivaciones: z.string().max(5000).optional().nullable(),
+  diagnostico: z.string().max(5000).optional().nullable(),
+  objetivosTerapeuticos: z.string().max(10000).optional().nullable(),
+  notasGenerales: z.string().max(10000).optional().nullable(),
   activo: z.boolean().optional(),
 });
 

@@ -19,7 +19,7 @@ type Perfil = {
   domicilioFiscal: string | null;
   cbu: string | null;
   aliasBank: string | null;
-  googleAccessToken: string | null;
+  googleConnected: boolean;
 };
 
 function Section({
@@ -91,6 +91,11 @@ export default function PerfilPage() {
   const [passwordConfirm, setPasswordConfirm] = useState("");
   const [savingPass, setSavingPass] = useState(false);
 
+  // Exportar datos
+  const [showExportForm, setShowExportForm] = useState(false);
+  const [exportPass, setExportPass] = useState("");
+  const [exporting, setExporting] = useState(false);
+
   useEffect(() => {
     fetch("/api/perfil")
       .then(async (r) => {
@@ -114,7 +119,7 @@ export default function PerfilPage() {
         setDomicilioFiscal(p.domicilioFiscal ?? "");
         setCbu(p.cbu ?? "");
         setAliasBank(p.aliasBank ?? "");
-        setGoogleConnected(!!p.googleAccessToken);
+        setGoogleConnected(p.googleConnected);
       })
       .catch((e: Error) => toast(e.message, "error"))
       .finally(() => setLoading(false));
@@ -444,15 +449,73 @@ export default function PerfilPage() {
 
       <Section icon={<Download className="w-5 h-5" />} title="Exportar datos">
         <p className="text-sm text-ink-500 mb-4">
-          Descargá un backup completo de tus pacientes, turnos y sesiones en formato JSON.
+          Descargá un backup completo de tus pacientes, turnos y sesiones en formato JSON. Requiere confirmar tu contraseña.
         </p>
-        <a
-          href="/api/exportar"
-          download
-          className="btn-ghost inline-flex items-center gap-2"
-        >
-          <Download className="w-4 h-4" /> Descargar backup
-        </a>
+        {!showExportForm ? (
+          <button
+            type="button"
+            onClick={() => setShowExportForm(true)}
+            className="btn-ghost inline-flex items-center gap-2"
+          >
+            <Download className="w-4 h-4" /> Descargar backup
+          </button>
+        ) : (
+          <form
+            onSubmit={async (e) => {
+              e.preventDefault();
+              setExporting(true);
+              try {
+                const res = await fetch("/api/exportar", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ password: exportPass }),
+                });
+                if (!res.ok) {
+                  const err = await res.json();
+                  toast(typeof err.error === "string" ? err.error : "Error al exportar", "error");
+                  return;
+                }
+                const blob = await res.blob();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `candelita-backup-${new Date().toISOString().slice(0, 10)}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+                setShowExportForm(false);
+                setExportPass("");
+              } catch {
+                toast("Error de red al exportar", "error");
+              } finally {
+                setExporting(false);
+              }
+            }}
+            className="flex flex-wrap items-center gap-2"
+          >
+            <input
+              type="password"
+              value={exportPass}
+              onChange={(e) => setExportPass(e.target.value)}
+              placeholder="Tu contraseña"
+              className="input text-sm"
+              autoFocus
+            />
+            <button
+              type="submit"
+              disabled={exporting || !exportPass}
+              className="btn-primary text-sm py-1.5 px-3"
+            >
+              {exporting ? "Exportando…" : "Confirmar"}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setShowExportForm(false); setExportPass(""); }}
+              className="btn-ghost text-sm py-1.5 px-3"
+            >
+              Cancelar
+            </button>
+          </form>
+        )}
       </Section>
     </div>
   );

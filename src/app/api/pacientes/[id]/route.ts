@@ -26,18 +26,18 @@ const UpdateSchema = z
     numeroAfiliado: z.string().optional().nullable(),
     sesionesAutorizadas: z.union([z.number(), z.string()]).optional().nullable(),
     importeSesion: z.union([z.number(), z.string()]).optional().nullable(),
-    motivoConsulta: z.string().optional().nullable(),
-    derivaciones: z.string().optional().nullable(),
-    diagnostico: z.string().optional().nullable(),
-    objetivosTerapeuticos: z.string().optional().nullable(),
-    notasGenerales: z.string().optional().nullable(),
+    motivoConsulta: z.string().max(10000).optional().nullable(),
+    derivaciones: z.string().max(5000).optional().nullable(),
+    diagnostico: z.string().max(5000).optional().nullable(),
+    objetivosTerapeuticos: z.string().max(10000).optional().nullable(),
+    notasGenerales: z.string().max(10000).optional().nullable(),
     activo: z.boolean().optional(),
   })
   .strict();
 
 function parseId(id: string) {
   const n = Number(id);
-  return Number.isFinite(n) ? n : null;
+  return Number.isFinite(n) && n > 0 && Number.isInteger(n) ? n : null;
 }
 
 export async function GET(
@@ -59,6 +59,7 @@ export async function GET(
     },
   });
   if (!paciente) return NextResponse.json({ error: "No encontrado" }, { status: 404 });
+  if (paciente.usuarioId !== Number(s.sub)) return NextResponse.json({ error: "No autorizado" }, { status: 403 });
   return NextResponse.json(paciente);
 }
 
@@ -72,6 +73,10 @@ export async function PATCH(
   const { id: idStr } = await params;
   const id = parseId(idStr);
   if (id == null) return NextResponse.json({ error: "id inválido" }, { status: 400 });
+
+  const existing = await prisma.paciente.findUnique({ where: { id }, select: { usuarioId: true } });
+  if (!existing) return NextResponse.json({ error: "No encontrado" }, { status: 404 });
+  if (existing.usuarioId !== Number(s.sub)) return NextResponse.json({ error: "No autorizado" }, { status: 403 });
 
   const body = await req.json().catch(() => null);
   const parsed = UpdateSchema.safeParse(body);
@@ -110,6 +115,10 @@ export async function DELETE(
   const { id: idStr } = await params;
   const id = parseId(idStr);
   if (id == null) return NextResponse.json({ error: "id inválido" }, { status: 400 });
+
+  const existing = await prisma.paciente.findUnique({ where: { id }, select: { usuarioId: true } });
+  if (!existing) return NextResponse.json({ error: "No encontrado" }, { status: 404 });
+  if (existing.usuarioId !== Number(s.sub)) return NextResponse.json({ error: "No autorizado" }, { status: 403 });
 
   // Soft delete: marcamos inactivo para no perder la historia clínica.
   const paciente = await prisma.paciente.update({

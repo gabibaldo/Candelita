@@ -15,13 +15,13 @@ const UpdateSchema = z
     cobrado: z.boolean().optional(),
     confirmado: z.boolean().optional(),
     modalidad: z.enum(["presencial", "virtual"]).optional(),
-    notas: z.string().optional().nullable(),
+    notas: z.string().max(5000).optional().nullable(),
   })
   .strict();
 
 function parseId(id: string) {
   const n = Number(id);
-  return Number.isFinite(n) ? n : null;
+  return Number.isFinite(n) && n > 0 && Number.isInteger(n) ? n : null;
 }
 
 export async function GET(
@@ -39,6 +39,7 @@ export async function GET(
     include: { paciente: true, sesion: true },
   });
   if (!turno) return NextResponse.json({ error: "No encontrado" }, { status: 404 });
+  if (turno.paciente.usuarioId !== Number(s.sub)) return NextResponse.json({ error: "No autorizado" }, { status: 403 });
   return NextResponse.json(turno);
 }
 
@@ -52,6 +53,10 @@ export async function PATCH(
   const { id: idStr } = await params;
   const id = parseId(idStr);
   if (id == null) return NextResponse.json({ error: "id inválido" }, { status: 400 });
+  const existing = await prisma.turno.findUnique({ where: { id }, include: { paciente: { select: { usuarioId: true } } } });
+  if (!existing) return NextResponse.json({ error: "No encontrado" }, { status: 404 });
+  if (existing.paciente.usuarioId !== Number(s.sub)) return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+
   const body = await req.json().catch(() => null);
   const parsed = UpdateSchema.safeParse(body);
   if (!parsed.success) {
@@ -86,6 +91,11 @@ export async function DELETE(
   const { id: idStr } = await params;
   const id = parseId(idStr);
   if (id == null) return NextResponse.json({ error: "id inválido" }, { status: 400 });
+
+  const existing = await prisma.turno.findUnique({ where: { id }, include: { paciente: { select: { usuarioId: true } } } });
+  if (!existing) return NextResponse.json({ error: "No encontrado" }, { status: 404 });
+  if (existing.paciente.usuarioId !== Number(s.sub)) return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+
   await prisma.turno.delete({ where: { id } });
   return NextResponse.json({ ok: true });
 }

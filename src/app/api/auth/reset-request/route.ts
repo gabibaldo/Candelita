@@ -3,12 +3,20 @@ import { prisma } from "@/lib/db";
 import { Resend } from "resend";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
+import { rateLimit, getIp } from "@/lib/ratelimit";
 
 export const runtime = "nodejs";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(req: NextRequest) {
+  if (!rateLimit(`reset:${getIp(req)}`, 3, 60 * 60 * 1000)) {
+    return NextResponse.json(
+      { error: "Demasiadas solicitudes. Intentá de nuevo en 1 hora." },
+      { status: 429 }
+    );
+  }
+
   const body = await req.json().catch(() => null);
   const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : null;
 
@@ -17,7 +25,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Buscar usuario (siempre responder OK para no filtrar si el email existe)
-  const usuario = await (prisma as any).usuario.findUnique({ where: { email } });
+  const usuario = await prisma.usuario.findUnique({ where: { email } });
 
   if (usuario) {
     // Generar token aleatorio
@@ -25,17 +33,17 @@ export async function POST(req: NextRequest) {
     const tokenHash = await bcrypt.hash(rawToken, 10);
     const expiry = new Date(Date.now() + 60 * 60 * 1000); // 1 hora
 
-    await (prisma as any).usuario.update({
+    await prisma.usuario.update({
       where: { email },
       data: { resetToken: tokenHash, resetTokenExpiry: expiry },
     });
 
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
-    const resetUrl = `${baseUrl}/reset-password?token=${rawToken}&email=${encodeURIComponent(email)}`;
+    const resetUrl = `${baseUrl}/reset-password#token=${rawToken}&email=${encodeURIComponent(email)}`;
 
     try {
       await resend.emails.send({
-        from: "Candelita <onboarding@resend.dev>",
+        from: `Candelita <${process.env.RESEND_FROM_EMAIL ?? "onboarding@resend.dev"}>`,
         to: email,
         subject: "Recuperar contraseña · Lic. Candela Berardi",
         html: `
@@ -67,7 +75,7 @@ export async function POST(req: NextRequest) {
     } catch (emailErr) {
       // El email falló pero el token ya está guardado — loguear sin romper el flujo
       console.error("[reset-request] Error enviando email:", emailErr);
-      console.log("Link de recuperación (fallback):", resetUrl);
+      console.log("[reset-request] Fallback: token generado para", email);
     }
   }
 

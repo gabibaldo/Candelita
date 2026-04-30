@@ -101,7 +101,7 @@ export async function enviarRecordatorio(
 
   // Mail a Cande con todos los turnos
   await resend.emails.send({
-    from: "Candelita <onboarding@resend.dev>",
+    from: `Candelita <${process.env.RESEND_FROM_EMAIL ?? "onboarding@resend.dev"}>`,
     to: destinatarioCande,
     subject: `Recordatorio de Turnos - ${fechaStr}`,
     html: buildHtmlCande(turnos, fecha),
@@ -115,7 +115,7 @@ export async function enviarRecordatorio(
   await Promise.all(
     conRecordatorio.map((t) =>
       resend.emails.send({
-        from: "Lic. Candela Berardi <onboarding@resend.dev>",
+        from: `Lic. Candela Berardi <${process.env.RESEND_FROM_EMAIL ?? "onboarding@resend.dev"}>`,
         to: t.paciente.tutorEmail!,
         subject: `Recordatorio de turno - ${t.paciente.nombre} ${t.paciente.apellido}`,
         html: buildHtmlTutor(t, fecha),

@@ -1,12 +1,12 @@
 import cron from "node-cron";
 import { prisma } from "./db";
-import { enviarRecordatorio } from "./email";
+import { enviarRecordatorio, type TurnoDelDia } from "./email";
 
 export function startCron() {
   // Todos los días a las 22hs (hora Argentina, UTC-3 = 01:00 UTC del día siguiente)
   cron.schedule("0 1 * * *", async () => {
     try {
-      const usuario = await (prisma.usuario as any).findFirst({
+      const usuario = await prisma.usuario.findFirst({
         select: { email: true },
       });
       if (!usuario) return;
@@ -52,7 +52,7 @@ export function startCron() {
 
       if (turnos.length === 0) return;
 
-      await enviarRecordatorio(usuario.email, turnos as any, inicioManana);
+      await enviarRecordatorio(usuario.email, turnos as TurnoDelDia[], inicioManana);
     } catch (err) {
       console.error("[cron recordatorio]", err);
     }

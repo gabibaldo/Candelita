@@ -1,7 +1,7 @@
 "use client";
 import { useState, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { User, CalendarDays, FileText, Paperclip, Target, Plus, Check, Search } from "lucide-react";
+import { User, CalendarDays, FileText, Paperclip, Target, Plus, Check, Search, Sparkles, X, Loader2, Copy } from "lucide-react";
 import Link from "next/link";
 import SessionForm from "@/components/SessionForm";
 import SessionList from "@/components/SessionList";
@@ -210,6 +210,31 @@ export default function PacienteTabs({ paciente }: { paciente: Paciente }) {
       : "info"
   );
   const isOS = paciente.tipo === "obra_social";
+
+  // Informe IA
+  const [generandoInforme, setGenerandoInforme] = useState(false);
+  const [informe, setInforme] = useState<string | null>(null);
+  const [informeErr, setInformeErr] = useState<string | null>(null);
+
+  async function generarInforme() {
+    setGenerandoInforme(true);
+    setInformeErr(null);
+    setInforme(null);
+    try {
+      const res = await fetch("/api/ia/informe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pacienteId: paciente.id }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error ?? "Error al generar el informe");
+      setInforme(data.informe);
+    } catch (e: any) {
+      setInformeErr(e.message);
+    } finally {
+      setGenerandoInforme(false);
+    }
+  }
 
   // Filtros historia clínica
   const [filtroTipo, setFiltroTipo] = useState<"all" | "sesion" | "nota">("all");
@@ -430,6 +455,48 @@ export default function PacienteTabs({ paciente }: { paciente: Paciente }) {
         {/* ── Historia clínica ── */}
         {tab === "historia" && (
           <div className="space-y-4">
+            {/* Botón informe IA */}
+            <div className="flex justify-end">
+              <button
+                onClick={generarInforme}
+                disabled={generandoInforme || sesiones.length === 0}
+                className="btn-secondary text-sm flex items-center gap-1.5 disabled:opacity-50"
+              >
+                {generandoInforme ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                {generandoInforme ? "Generando informe…" : "Generar informe de evolución"}
+              </button>
+            </div>
+            {/* Modal informe */}
+            {(informe || informeErr) && (
+              <div className="card p-5 space-y-3 border-brand-200 bg-brand-50/30">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-semibold text-brand-800 flex items-center gap-1.5">
+                    <Sparkles className="w-4 h-4" /> Informe de evolución terapéutica
+                  </p>
+                  <div className="flex gap-2">
+                    {informe && (
+                      <button
+                        onClick={() => navigator.clipboard.writeText(informe)}
+                        className="text-xs text-brand-700 hover:text-brand-900 flex items-center gap-1"
+                      >
+                        <Copy className="w-3.5 h-3.5" /> Copiar
+                      </button>
+                    )}
+                    <button onClick={() => { setInforme(null); setInformeErr(null); }} className="text-ink-400 hover:text-ink-700">
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+                {informeErr && <p className="text-sm text-red-600">{informeErr}</p>}
+                {informe && (
+                  <textarea
+                    className="textarea w-full text-sm min-h-[300px] bg-white"
+                    value={informe}
+                    onChange={(e) => setInforme(e.target.value)}
+                  />
+                )}
+              </div>
+            )}
             {/* Filtros */}
             <div className="card p-3 space-y-2">
               <div className="flex flex-wrap gap-2 items-center">

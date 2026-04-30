@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth";
-import { enviarRecordatorio } from "@/lib/email";
+import { enviarRecordatorio, type TurnoDelDia } from "@/lib/email";
 
 export const runtime = "nodejs";
 
@@ -9,7 +9,7 @@ export async function POST() {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
 
-  const usuario = await (prisma.usuario as any).findFirst({
+  const usuario = await prisma.usuario.findFirst({
     select: { email: true },
   });
   if (!usuario) return NextResponse.json({ error: "Usuario no encontrado" }, { status: 404 });
@@ -40,7 +40,8 @@ export async function POST() {
           motivoConsulta: true,
           tutorNombre: true,
           tutorTelefono: true,
-          telefono: true,
+          tutorEmail: true,
+          recordatorioEmail: true,
           notasGenerales: true,
         },
       },
@@ -54,6 +55,6 @@ export async function POST() {
     return NextResponse.json({ ok: false, mensaje: "No hay turnos programados para mañana" });
   }
 
-  await enviarRecordatorio(usuario.email, turnos as any, inicioManana);
+  await enviarRecordatorio(usuario.email, turnos as TurnoDelDia[], inicioManana);
   return NextResponse.json({ ok: true, enviado_a: usuario.email, turnos: turnos.length });
 }

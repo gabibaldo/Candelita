@@ -28,8 +28,7 @@ export async function GET() {
     const session = await getSession();
     if (!session) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const usuario = await (prisma.usuario as any).findUnique({
+    const usuarioData = await prisma.usuario.findUnique({
       where: { id: Number(session.sub) },
       select: {
         id: true,
@@ -50,8 +49,9 @@ export async function GET() {
       },
     });
 
-    if (!usuario) return NextResponse.json({ error: "No encontrado" }, { status: 404 });
-    return NextResponse.json(usuario);
+    if (!usuarioData) return NextResponse.json({ error: "No encontrado" }, { status: 404 });
+    const { googleAccessToken, ...usuario } = usuarioData;
+    return NextResponse.json({ ...usuario, googleConnected: !!googleAccessToken });
   } catch (err: any) {
     console.error("[GET /api/perfil]", err);
     return NextResponse.json(
@@ -82,8 +82,7 @@ export async function PATCH(req: NextRequest) {
       }
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const updated = await (prisma.usuario as any).update({
+    const updated = await prisma.usuario.update({
       where: { id: Number(session.sub) },
       data,
       select: {

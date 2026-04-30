@@ -18,7 +18,7 @@ const TurnoSchema = z.object({
   cobrado: z.boolean().optional(),
   confirmado: z.boolean().optional(),
   modalidad: z.enum(["presencial", "virtual"]).optional(),
-  notas: z.string().optional().nullable(),
+  notas: z.string().max(5000).optional().nullable(),
   repetirSemanas: z.number().int().min(0).max(52).optional(),
 });
 
@@ -122,13 +122,13 @@ export async function POST(req: NextRequest) {
     // Crear evento en Google Calendar para presencial y virtual
     const session = await getSession();
     if (session) {
-      const usuario = await (prisma.usuario as any).findFirst({
+      const usuario = await prisma.usuario.findFirst({
         select: { googleAccessToken: true, googleRefreshToken: true, googleTokenExpiry: true },
       });
       if (usuario?.googleAccessToken && usuario?.googleRefreshToken) {
         try {
           const modalidad = (d.modalidad ?? "presencial") as "presencial" | "virtual";
-          const paciente = turno.paciente as any;
+          const paciente = turno.paciente;
           const emoji = modalidad === "virtual" ? "🖥" : "🏥";
           const { googleEventId, meetLink } = await createCalendarEvent(
             usuario.googleAccessToken,

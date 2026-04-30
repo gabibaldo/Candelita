@@ -19,6 +19,8 @@ model Usuario {
   passwordHash String
   createdAt    DateTime @default(now())
 
+  pacientes Paciente[]
+
   // Datos de contacto y profesionales
   telefono             String?
   titulo               String?
@@ -46,6 +48,8 @@ model Usuario {
 
 model Paciente {
   id                  Int      @id @default(autoincrement())
+  usuarioId           Int      @default(1)
+  usuario             Usuario  @relation(fields: [usuarioId], references: [id])
   // Datos básicos
   nombre              String
   apellido            String
@@ -147,4 +151,17 @@ model BloqueoDia {
   createdAt DateTime @default(now())
 
   @@index([inicio])
+}
+
+
+model AuditLog {
+  id           Int      @id @default(autoincrement())
+  usuarioId    Int
+  action       String
+  resourceType String?
+  resourceId   Int?
+  ipAddress    String?
+  createdAt    DateTime @default(now())
+
+  @@index([usuarioId, createdAt])
 }
