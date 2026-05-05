@@ -11,17 +11,17 @@ export function startCron() {
       });
       if (!usuario) return;
 
-      // Mañana en hora Argentina
+      // A las 01:00 UTC el cron ya está en el día siguiente en UTC,
+      // pero en Argentina (UTC-3) son las 22:00 del día anterior.
+      // "Mañana" en Argentina = el día UTC actual (sin sumar 1).
       const ahora = new Date();
-      const manana = new Date(ahora);
-      manana.setUTCDate(manana.getUTCDate() + 1);
 
       // Rango UTC que corresponde al día completo en Argentina (UTC-3)
       const inicioManana = new Date(
-        Date.UTC(manana.getUTCFullYear(), manana.getUTCMonth(), manana.getUTCDate(), 3, 0, 0)
+        Date.UTC(ahora.getUTCFullYear(), ahora.getUTCMonth(), ahora.getUTCDate(), 3, 0, 0)
       );
       const finManana = new Date(
-        Date.UTC(manana.getUTCFullYear(), manana.getUTCMonth(), manana.getUTCDate() + 1, 3, 0, 0)
+        Date.UTC(ahora.getUTCFullYear(), ahora.getUTCMonth(), ahora.getUTCDate() + 1, 3, 0, 0)
       );
 
       const turnos = await prisma.turno.findMany({

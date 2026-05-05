@@ -19,14 +19,12 @@ export async function GET(req: NextRequest) {
   if (!usuario) return NextResponse.json({ ok: true });
 
   const ahora = new Date();
-  const manana = new Date(ahora);
-  manana.setUTCDate(manana.getUTCDate() + 1);
 
   const inicioManana = new Date(
-    Date.UTC(manana.getUTCFullYear(), manana.getUTCMonth(), manana.getUTCDate(), 3, 0, 0)
+    Date.UTC(ahora.getUTCFullYear(), ahora.getUTCMonth(), ahora.getUTCDate(), 3, 0, 0)
   );
   const finManana = new Date(
-    Date.UTC(manana.getUTCFullYear(), manana.getUTCMonth(), manana.getUTCDate() + 1, 3, 0, 0)
+    Date.UTC(ahora.getUTCFullYear(), ahora.getUTCMonth(), ahora.getUTCDate() + 1, 3, 0, 0)
   );
 
   const turnos = await prisma.turno.findMany({
