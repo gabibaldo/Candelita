@@ -1,13 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { Resend } from "resend";
+import nodemailer from "nodemailer";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import { rateLimit, getIp } from "@/lib/ratelimit";
 
 export const runtime = "nodejs";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.GMAIL_USER,
+    pass: process.env.GMAIL_APP_PASSWORD,
+  },
+});
 
 export async function POST(req: NextRequest) {
   if (!rateLimit(`reset:${getIp(req)}`, 3, 60 * 60 * 1000)) {
@@ -42,8 +48,8 @@ export async function POST(req: NextRequest) {
     const resetUrl = `${baseUrl}/reset-password#token=${rawToken}&email=${encodeURIComponent(email)}`;
 
     try {
-      await resend.emails.send({
-        from: `Candelita <${process.env.RESEND_FROM_EMAIL ?? "onboarding@resend.dev"}>`,
+      await transporter.sendMail({
+        from: `Lic. Candela Berardi <${process.env.GMAIL_USER}>`,
         to: email,
         subject: "Recuperar contraseña · Lic. Candela Berardi",
         html: `

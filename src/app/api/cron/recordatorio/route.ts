@@ -42,8 +42,13 @@ export async function GET(req: NextRequest) {
     },
   });
 
-  if (turnos.length > 0) {
-    await enviarRecordatorio(usuario.email, turnos as TurnoDelDia[], inicioManana);
+  try {
+    if (turnos.length > 0) {
+      await enviarRecordatorio(usuario.email, turnos as TurnoDelDia[], inicioManana);
+    }
+  } catch (err) {
+    console.error("[cron/recordatorio] Error al enviar:", err);
+    return NextResponse.json({ error: String(err) }, { status: 500 });
   }
 
   return NextResponse.json({ ok: true, enviados: turnos.length });

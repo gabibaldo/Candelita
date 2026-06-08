@@ -1,6 +1,12 @@
-import { Resend } from "resend";
+import nodemailer from "nodemailer";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.GMAIL_USER,
+    pass: process.env.GMAIL_APP_PASSWORD,
+  },
+});
 
 export type TurnoDelDia = {
   inicio: Date;
@@ -99,9 +105,11 @@ export async function enviarRecordatorio(
 
   const fechaStr = formatFecha(fecha);
 
+  const from = `Lic. Candela Berardi <${process.env.GMAIL_USER}>`;
+
   // Mail a Cande con todos los turnos
-  await resend.emails.send({
-    from: `Candelita <${process.env.RESEND_FROM_EMAIL ?? "onboarding@resend.dev"}>`,
+  await transporter.sendMail({
+    from,
     to: destinatarioCande,
     subject: `Recordatorio de Turnos - ${fechaStr}`,
     html: buildHtmlCande(turnos, fecha),
@@ -114,8 +122,8 @@ export async function enviarRecordatorio(
 
   await Promise.all(
     conRecordatorio.map((t) =>
-      resend.emails.send({
-        from: `Lic. Candela Berardi <${process.env.RESEND_FROM_EMAIL ?? "onboarding@resend.dev"}>`,
+      transporter.sendMail({
+        from,
         to: t.paciente.tutorEmail!,
         subject: `Recordatorio de turno - ${t.paciente.nombre} ${t.paciente.apellido}`,
         html: buildHtmlTutor(t, fecha),
