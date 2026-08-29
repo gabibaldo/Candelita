@@ -12,6 +12,7 @@ import {
   BarChart3,
   MoreHorizontal,
   Banknote,
+  Clock,
 } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "./Toast";
@@ -22,6 +23,7 @@ import GlobalSearch from "./GlobalSearch";
 const links = [
   { href: "/", label: "Hoy", icon: LayoutDashboard },
   { href: "/calendario", label: "Calendario", icon: CalendarIcon },
+  { href: "/disponibilidad", label: "Disponibilidad", icon: Clock },
   { href: "/pacientes", label: "Pacientes", icon: Users },
   { href: "/cobros", label: "Cobros", icon: Banknote },
   { href: "/estadisticas", label: "Estadísticas", icon: BarChart3 },

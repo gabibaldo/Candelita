@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { formatMoney } from "@/lib/utils";
 import { Banknote, CheckCircle2, Clock, AlertTriangle } from "lucide-react";
 import CobrosClient from "./CobrosClient";
+import ExportarCobrosBtn from "./ExportarCobrosBtn";
 
 export const dynamic = "force-dynamic";
 
@@ -60,8 +61,13 @@ export default async function CobrosPage() {
   return (
     <div className="space-y-6">
       <header>
-        <p className="text-sm text-ink-500">Finanzas</p>
-        <h1 className="text-2xl font-semibold text-ink-800">Cobros</h1>
+        <div className="flex items-end justify-between gap-3 flex-wrap">
+        <div>
+          <p className="text-sm text-ink-500">Finanzas</p>
+          <h1 className="text-2xl font-semibold text-ink-800">Cobros</h1>
+        </div>
+        <ExportarCobrosBtn year={year} month={month} />
+      </div>
       </header>
 
       <section className="grid grid-cols-2 lg:grid-cols-4 gap-3">

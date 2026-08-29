@@ -80,8 +80,9 @@ export default async function Dashboard() {
 
   const deudaDiasUmbral = 7; // turnos sin cobrar con más de N días
   const umbralDeuda = new Date(now.getTime() - deudaDiasUmbral * 86_400_000);
+  const umbralSinTurno = new Date(now.getTime() - 30 * 86_400_000);
 
-  const [turnosSemana, proximos, pacientesActivos, turnosSinCobrar] = await Promise.all([
+  const [turnosSemana, proximos, pacientesActivos, turnosSinCobrar, pacientesSinTurno] = await Promise.all([
     prisma.turno.findMany({
       where: {
         inicio: { gte: weekStart, lte: weekEnd },
@@ -112,6 +113,17 @@ export default async function Dashboard() {
       },
       orderBy: { inicio: "asc" },
       include: { paciente: { select: { id: true, nombre: true, apellido: true, importeSesion: true } } },
+    }),
+    prisma.paciente.findMany({
+      where: {
+        activo: true,
+        turnos: { none: { inicio: { gte: umbralSinTurno }, estado: { in: ["programado", "realizado"] } } },
+      },
+      select: {
+        id: true, nombre: true, apellido: true,
+        turnos: { orderBy: { inicio: "desc" }, take: 1, select: { inicio: true } },
+      },
+      orderBy: [{ apellido: "asc" }, { nombre: "asc" }],
     }),
   ]);
 
@@ -332,6 +344,46 @@ export default async function Dashboard() {
               </Link>
             </div>
             <ProximosTurnos turnos={proximos} />
+          </section>
+        </FadeUp>
+      )}
+
+      {pacientesSinTurno.length > 0 && (
+        <FadeUp delay={0.33}>
+          <section>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="section-title">Sin turno hace +30 días</h2>
+              <Link
+                href="/pacientes"
+                className="text-xs text-brand-700 hover:underline inline-flex items-center gap-1"
+              >
+                Ver pacientes <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+            <ul className="card divide-y divide-ink-100">
+              {pacientesSinTurno.slice(0, 8).map((p) => {
+                const ultimoTurno = p.turnos[0]?.inicio;
+                const diasSinTurno = ultimoTurno
+                  ? Math.floor((now.getTime() - new Date(ultimoTurno).getTime()) / 86_400_000)
+                  : null;
+                return (
+                  <li key={p.id} className="px-3 py-2.5 flex items-center gap-3 hover:bg-ink-50/50 transition">
+                    <Avatar nombre={p.nombre} apellido={p.apellido} size="sm" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-ink-800 truncate">
+                        {p.apellido}, {p.nombre}
+                      </p>
+                      <p className="text-xs text-ink-400">
+                        {diasSinTurno !== null ? `Último turno hace ${diasSinTurno} días` : "Sin turnos registrados"}
+                      </p>
+                    </div>
+                    <Link href={`/pacientes/${p.id}`} className="text-xs text-brand-700 hover:underline shrink-0">
+                      Ver
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
           </section>
         </FadeUp>
       )}

@@ -925,7 +925,7 @@ export function TurnoModal({
           </div>
 
           {/* Sesión rápida */}
-          {isEdit && estado === "realizado" && !data.turno.sesion && (
+          {isEdit && !["cancelado", "ausente"].includes(estado) && !data.turno.sesion && (
             <SesionRapida turnoId={data.turno.id} pacienteId={data.turno.pacienteId}
               inicioISO={data.turno.inicio} onGuardada={onClose} />
           )}
